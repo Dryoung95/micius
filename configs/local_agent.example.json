@@ -1,0 +1,54 @@
+{
+  "llm": {
+    "provider": "openai",
+    "base_url": "https://api.example.com/v1",
+    "model": "your-model-name",
+    "api_key_env": "LLM_API_KEY",
+    "anthropic_version": "2023-06-01",
+    "timeout_sec": 60,
+    "transport": "auto",
+    "temperature": 0.2,
+    "max_tokens": 512
+  },
+  "atlas": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "timeout_sec": 10
+  },
+  "device_node": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "timeout_sec": 10,
+    "transport": "jsonl_tcp",
+    "device_id": "embedded_node",
+    "label": "primary_embedded_node",
+    "ssh": {
+      "enabled": false,
+      "user": "",
+      "port": 22,
+      "connect_timeout_sec": 5
+    }
+  },
+  "agent": {
+    "max_steps": 8,
+    "system_prompt": "You are Micius, an embedded-agent bridge for physical devices. Coordinate general embedded device nodes through controlled tools, including Linux-capable boards, Atlas-class edge boards, ESP32-class MCU nodes, sensors, and actuators. Maintain persistent device capability memory, inspect sensors, write reusable restricted DSL scripts, and prefer safe actions. Treat the connected device node as an MCP-like embedded capability server: read resources before assuming hardware state, call controlled tools for actions, and use write_dsl_script/run_dsl_script for reusable behavior. Answer in concise Chinese. Do not invent tool results; call tools when you need device data.",
+    "max_tokens": 512,
+    "device_context_max_chars": 8000
+  },
+  "boards": {
+    "knowledge_dir": "board_knowledge",
+    "active": [],
+    "context_max_chars": 10000
+  },
+  "memory": {
+    "root": "micius_memory",
+    "context_max_chars": 8000
+  },
+  "device_research": {
+    "root": "data/device_research"
+  },
+  "self_management": {
+    "enabled": true,
+    "allow_source_edits": true
+  }
+}

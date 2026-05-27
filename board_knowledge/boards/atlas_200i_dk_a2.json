@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "board_id": "atlas_200i_dk_a2",
+  "display_name": "Huawei Atlas 200I DK A2",
+  "aliases": [
+    "atlas",
+    "atlas_200i",
+    "atlas_200i_dk_a2"
+  ],
+  "manual_status": {
+    "coverage": "observed_runtime_plus_manual_pending",
+    "sources": [],
+    "notes": "The official board manual has not been imported yet. Current entries are observed from the connected Atlas runtime and should be completed from the manual before hardware-critical use."
+  },
+  "port_aliases": {
+    "default_camera": "/dev/video0",
+    "micius_rpc": "<board-ip>:8765",
+    "ssh": "<board-ip>:22"
+  },
+  "ports": [
+    {
+      "name": "ethernet_lan",
+      "label": "Ethernet LAN port",
+      "kind": "network",
+      "connector": "RJ45",
+      "endpoint": "<board-ip>",
+      "os_path_pattern": "eth*",
+      "direction": "bidirectional",
+      "notes": "Observed PC-to-Atlas wired link. SSH listens on TCP 22; Micius remote tool server listens on TCP 8765."
+    },
+    {
+      "name": "usb_host_camera",
+      "label": "USB host port for UVC camera",
+      "kind": "usb",
+      "connector": "USB host",
+      "os_path_pattern": "/dev/video*",
+      "direction": "input",
+      "notes": "Observed Generic UVC USB2.0 PC CAMERA. Primary frame device is /dev/video0; /dev/video1 also appears."
+    },
+    {
+      "name": "manifest_mock",
+      "label": "Micius manifest mock source",
+      "kind": "virtual",
+      "connector": "software",
+      "os_path_pattern": "data/atlas_manifest.json",
+      "direction": "input",
+      "notes": "Used before real sensors are wired. Replace with exact GPIO/I2C/SPI/CAN/serial port facts after manual import."
+    }
+  ],
+  "peripherals": [
+    {
+      "name": "usb_camera0",
+      "kind": "camera",
+      "port": "usb_host_camera",
+      "protocol": "camera/v4l2",
+      "os_path": "/dev/video0",
+      "alternate_os_paths": [
+        "/dev/video1"
+      ],
+      "micius_tool": "capture_camera_frame",
+      "status": "observed",
+      "notes": "Registered in the Atlas manifest during bring-up. Use /camera describe or capture_camera_frame."
+    },
+    {
+      "name": "front_distance",
+      "kind": "sensor",
+      "port": "manifest_mock",
+      "protocol": "mock",
+      "manifest_name": "front_distance",
+      "unit": "m",
+      "micius_tool": "read_registered_peripheral",
+      "status": "mock",
+      "notes": "Safe test input for obstacle-avoidance DSL. Critical threshold used so far: 0.35 m."
+    }
+  ],
+  "safety_notes": [
+    "Do not drive actuators from this profile until the official port voltage, current, and pin-mode limits are recorded.",
+    "Treat all non-observed connector names as manual_pending until extracted from the board manual."
+  ]
+}

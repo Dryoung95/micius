@@ -1,0 +1,6 @@
+{
+  "device_id": "atlas_200i",
+  "host": "0.0.0.0",
+  "port": 8765,
+  "manifest": "data/atlas_manifest.json"
+}

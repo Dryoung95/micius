@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "micius-agent"
+version = "0.1.0"
+description = "Terminal-first embedded agent workbench for OpenAI-compatible APIs, native Claude, and physical device nodes."
+requires-python = ">=3.10"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Micius-Agent contributors" }
+]
+keywords = ["agent", "embedded", "esp32", "atlas", "robotics", "cli"]
+
+[project.scripts]
+micius = "local_agent.cli:main"
+micius-device-node = "atlas_agent.server:main"
+atlas-agent-server = "atlas_agent.server:main"
+
+[tool.setuptools]
+packages = ["atlas_agent", "local_agent", "shared"]

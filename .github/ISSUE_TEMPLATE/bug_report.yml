@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a Micius-Agent issue with enough diagnostics to reproduce it.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting an issue. Please remove API keys, Wi-Fi passwords, tokens, and private device addresses before posting.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Run `micius`
+        2. Enter `/usb`
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostic report
+      description: Run `/report` in Micius and paste the redacted result here.
+      render: markdown
+    validations:
+      required: false
+  - type: input
+    id: platform
+    attributes:
+      label: Host platform
+      placeholder: Windows 11 / Ubuntu 24.04 / macOS
+  - type: input
+    id: device
+    attributes:
+      label: Device or board
+      placeholder: ESP32-S3, Atlas 200I DK A2, custom Linux board, etc.

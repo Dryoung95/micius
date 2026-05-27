@@ -1,0 +1,38 @@
+# Local API configuration
+configs/local_agent.json
+configs/*.local.json
+
+# Runtime state and reports
+data/*
+!data/.gitkeep
+micius_memory/MEMORY.md
+micius_memory/USER.md
+micius_memory/sessions.db
+micius_memory/skill_usage.json
+micius_memory/skills/*
+!micius_memory/skills/.gitkeep
+micius_memory/reflections/*
+!micius_memory/reflections/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Embedded build outputs
+.pio/
+**/.pio/
+*.bin
+*.elf
+*.map
+*.hex
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

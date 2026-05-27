@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Micius Board Profile",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "board_id",
+    "display_name",
+    "ports",
+    "peripherals"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "board_id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_-]{0,63}$"
+    },
+    "display_name": {
+      "type": "string"
+    },
+    "aliases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "manual_status": {
+      "type": "object"
+    },
+    "port_aliases": {
+      "type": "object"
+    },
+    "ports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind"
+        ]
+      }
+    },
+    "peripherals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "kind",
+          "port"
+        ]
+      }
+    },
+    "safety_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

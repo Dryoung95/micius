@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "board_id": "example_board",
+  "display_name": "Example Board",
+  "aliases": [
+    "example"
+  ],
+  "manual_status": {
+    "coverage": "manual_pending",
+    "sources": [],
+    "notes": "Replace this template with facts extracted from the board manual."
+  },
+  "port_aliases": {
+    "default_camera": "/dev/video0"
+  },
+  "ports": [
+    {
+      "name": "usb_host_0",
+      "label": "USB host connector label from silkscreen/manual",
+      "kind": "usb",
+      "connector": "USB-A",
+      "os_path_pattern": "/dev/video* or /dev/ttyUSB*",
+      "direction": "bidirectional",
+      "voltage": "5V",
+      "notes": "Record exact current limits and supported modes from the manual."
+    }
+  ],
+  "peripherals": [
+    {
+      "name": "example_sensor",
+      "kind": "sensor",
+      "port": "usb_host_0",
+      "protocol": "serial",
+      "os_path": "/dev/ttyUSB0",
+      "micius_tool": "read_registered_peripheral",
+      "status": "manual_pending",
+      "notes": "Record calibration, units, and safety limits."
+    }
+  ],
+  "safety_notes": [
+    "Do not infer voltage or current limits. Record only manual-backed facts."
+  ]
+}
