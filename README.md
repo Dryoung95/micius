@@ -44,8 +44,8 @@ Requirements:
 - Optional for ESP32 workflows: `pyserial`, `esptool`, `platformio`
 
 ```bash
-git clone https://github.com/your-name/micius-agent.git
-cd micius-agent
+git clone https://github.com/Dryoung95/micius.git
+cd micius
 python -m pip install -e .
 ```
 
