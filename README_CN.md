@@ -6,11 +6,62 @@
 
 语言：[English](README.md) | 中文
 
+**一个终端优先的嵌入式 Agent，让大模型能够感知、记忆并操作真实硬件。**
+
 Micius-Agent 是一个面向嵌入式开发的终端 Agent 工作台。它支持 OpenAI 兼容 API 和原生 Anthropic Claude，并连接本地开发工具、串口设备、摄像头、ESP32 类开发板、Linux 边缘板和轻量级设备节点。
 
 **Micius** 对应中文里的 **墨子**。墨子与逻辑、工程、光学和实践技艺相关，这也对应本项目希望把大模型能力连接到真实硬件和工程实践中的方向。
 
 Micius-Agent 的设计思路是把主 Agent 保留在本地电脑上，再让连接的硬件通过受控工具和轻量设备节点暴露能力。这样即使开发板本身无法运行完整 coding agent，也可以参与到 Agent 工作流中。
+
+## 60 秒快速体验
+
+第一次自检不需要 API key，也不需要连接硬件：
+
+```bash
+git clone https://github.com/Dryoung95/micius.git
+cd micius
+python -m pip install -e .
+micius demo
+```
+
+预期输出类似：
+
+```text
+Micius demo
+-----------
+Local mode: OK
+Device node status: not connected; this is fine for a first no-hardware test.
+
+No-hardware commands to try inside Micius:
+  /doctor
+  /usb
+  /board list
+  /model
+  /commands
+```
+
+## 为什么是 Micius？
+
+大多数 coding agent 主要生活在文件和终端里。Micius 面向真实硬件边缘：
+
+- 扫描 USB 和串口设备。
+- 监视有边界的串口输出。
+- 编译并上传 PlatformIO 固件。
+- 将 Linux 类开发板接入为轻量设备节点。
+- 记住板卡 profile、端口别名、失败尝试、成功命令和可复用硬件流程。
+
+## 架构
+
+```mermaid
+flowchart LR
+  User["用户"] --> CLI["Micius CLI"]
+  CLI --> LLM["OpenAI 兼容 API / Claude"]
+  CLI --> LocalTools["USB / 串口 / PlatformIO"]
+  CLI --> Memory["板卡知识 / Skills / 设备记忆"]
+  CLI --> Node["Micius 设备节点"]
+  Node --> Hardware["传感器 / 摄像头 / 执行器 / 开发板"]
+```
 
 ## 核心特性
 

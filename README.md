@@ -6,11 +6,62 @@
 
 Language: English | [中文](README_CN.md)
 
+**A terminal-first embedded agent that lets LLMs see, remember, and operate real-world devices.**
+
 Terminal-first embedded agent workbench for OpenAI-compatible APIs, native Anthropic Claude, local development tools, serial devices, cameras, ESP32-class boards, and Linux-capable edge nodes.
 
 The name **Micius** refers to **Mozi (墨子)**, the ancient Chinese thinker whose work is associated with logic, engineering, optics, and practical craftsmanship.
 
 Micius-Agent keeps the main agent on your computer and exposes connected hardware through controlled tools and lightweight device nodes. This makes it useful for development boards that cannot run a full coding agent locally.
+
+## Try It In 60 Seconds
+
+No API key or hardware is required for the first smoke test:
+
+```bash
+git clone https://github.com/Dryoung95/micius.git
+cd micius
+python -m pip install -e .
+micius demo
+```
+
+Expected demo output:
+
+```text
+Micius demo
+-----------
+Local mode: OK
+Device node status: not connected; this is fine for a first no-hardware test.
+
+No-hardware commands to try inside Micius:
+  /doctor
+  /usb
+  /board list
+  /model
+  /commands
+```
+
+## Why Micius?
+
+Most coding agents live inside files and terminals. Micius is designed for the physical edge:
+
+- It can scan USB and serial devices.
+- It can monitor bounded serial output.
+- It can build and upload PlatformIO firmware.
+- It can connect Linux-capable boards as lightweight device nodes.
+- It can remember board profiles, port aliases, failed attempts, working commands, and reusable hardware workflows.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  User["User"] --> CLI["Micius CLI"]
+  CLI --> LLM["OpenAI-compatible APIs / Claude"]
+  CLI --> LocalTools["USB / Serial / PlatformIO"]
+  CLI --> Memory["Board Knowledge / Skills / Device Memory"]
+  CLI --> Node["Micius Device Node"]
+  Node --> Hardware["Sensors / Cameras / Actuators / Boards"]
+```
 
 ## Highlights
 
