@@ -1263,6 +1263,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
                 "local_agent/cli.py",
                 "local_agent/self_tools.py",
                 "local_agent/llm_client.py",
+                "local_agent/context_engine.py",
                 "local_agent/remote_tools.py",
                 "local_agent/device_connect.py",
                 "local_agent/device_research.py",

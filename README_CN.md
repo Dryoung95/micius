@@ -71,6 +71,7 @@ flowchart LR
 - **设备节点桥接**：Linux 类开发板可以通过轻量 JSONL TCP 工具服务器接入。
 - **DeviceResearch 轨迹**：把硬件调试任务记录为 `task.json`、`plan.md` 和 `trace.jsonl`。
 - **持久化技能和板卡知识**：保存可复用工作流、端口映射、手册摘要和设备经验。
+- **上下文感知 Agent Loop**：压缩大型工具结果、保存 artifact，并暴露估算 token/cost 信息。
 - **保守工具边界**：默认不开放无限制 shell 执行。
 
 ## 项目状态
@@ -184,6 +185,9 @@ micius doctor
 | `/setup` | 配置 provider、API URL、模型名和 API key。 |
 | `/model` | 查看当前 provider、模型和 endpoint。 |
 | `/model list` | 列出当前 API 暴露的模型。 |
+| `/cost` | 查看估算 prompt tokens、provider usage 和压缩节省。 |
+| `/permissions` | 查看工具风险等级和压缩策略。 |
+| `/context budget` | 查看消息、上下文大小和 context ledger。 |
 | `/usb` | 扫描 USB 设备和串口。 |
 | `/serial monitor <port> [baud] [seconds]` | 限时读取串口输出。 |
 | `/deps install platformio` | 安装允许列表中的本地依赖。 |
@@ -209,6 +213,17 @@ Provider 示例位于 `configs/providers/`：
 | `deepseek-compatible.example.json` | DeepSeek 的 OpenAI 兼容 API。 |
 
 可以把需要的 `llm` 片段复制到 `configs/local_agent.json`，也可以直接运行 `micius --setup`。
+
+## Agent Loop
+
+Micius 为长时间硬件会话维护了一个轻量 context ledger：
+
+- 大型串口日志、PlatformIO 输出、诊断报告和摄像头 payload 会写入 `data/tool_artifacts/`。
+- 模型收到的是压缩摘要和 artifact 路径，而不是每轮重复携带完整日志。
+- 工具策略会记录风险等级、是否适合并行、以及结果压缩行为。
+- `/cost`、`/permissions` 和 `/context budget` 可以查看当前 loop 状态。
+
+这是面向长时间嵌入式工作流的 cache-stable、cost-aware agent loop 的第一步。
 
 ## DeviceResearch
 

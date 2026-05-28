@@ -55,6 +55,8 @@ COMMAND_DESCRIPTIONS = {
     "/doctor [api]": "Run connectivity checks; add api to test model listing.",
     "/connect [status|doctor|refresh|commands|ssh]": "Diagnose and refresh the configured embedded device-node connection.",
     "/context [device|board|memory|all|refresh]": "Inspect or refresh loaded model context.",
+    "/cost": "Show estimated prompt tokens, provider usage, and compaction savings.",
+    "/permissions": "Show tool risk classes, compaction policies, and edit permissions.",
     "/memory [show|add|user|search|path]": "Read or update long-term project memory.",
     "/skill [list|show|use|add|search|delete]": "Manage reusable Micius workflow skills.",
     "/learn fact <text>": "Persist a stable device or project fact.",
@@ -138,6 +140,8 @@ COMMAND_GROUPS = [
             "/doctor [api]",
             "/connect [status|doctor|refresh|commands|ssh]",
             "/context [device|board|memory|all|refresh]",
+            "/cost",
+            "/permissions",
             "/memory [show|add|user|search|path]",
             "/skill [list|show|use|add|search|delete]",
             "/learn fact <text>",
@@ -559,6 +563,12 @@ def _handle_command(line: str, config: Dict[str, Any], config_path: Path, agent:
         return False
     if command in {"/context", "/ctx"}:
         _handle_context_command(line, agent)
+        return False
+    if command == "/cost":
+        _handle_cost_command(agent)
+        return False
+    if command in {"/permissions", "/perms"}:
+        _handle_permissions_command(agent)
         return False
     if command == "/memory":
         _handle_memory_command(line, agent)
@@ -1937,6 +1947,9 @@ def _handle_context_command(line: str, agent: LocalAgent) -> None:
     if action == "memory":
         print(agent.memory_context)
         return
+    if action in {"budget", "ledger", "tokens"}:
+        print(json.dumps(agent.context_status(), ensure_ascii=False, indent=2))
+        return
     print(
         json.dumps(
             {
@@ -1951,6 +1964,14 @@ def _handle_context_command(line: str, agent: LocalAgent) -> None:
             indent=2,
         )
     )
+
+
+def _handle_cost_command(agent: LocalAgent) -> None:
+    print(json.dumps(agent.cost_status(), ensure_ascii=False, indent=2))
+
+
+def _handle_permissions_command(agent: LocalAgent) -> None:
+    print(json.dumps(agent.permissions_status(), ensure_ascii=False, indent=2))
 
 
 def _handle_memory_command(line: str, agent: LocalAgent) -> None:

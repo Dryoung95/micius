@@ -8,6 +8,12 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 from local_agent.board_knowledge import BoardKnowledgeBase
+from local_agent.context_engine import (
+    ArtifactStore,
+    ContextLedger,
+    compact_tool_result,
+    tool_policy_snapshot,
+)
 from local_agent.device_connect import build_connection_report, get_device_node_config
 from local_agent.llm_client import LLMClient
 from local_agent.micius_memory import MiciusMemory
@@ -54,6 +60,9 @@ class LocalAgent:
         self.system_prompt = config.get("agent", {}).get("system_prompt", DEFAULT_SYSTEM_PROMPT)
         self.messages: List[Dict[str, Any]] = []
         self.session_id = f"session_{int(time.time() * 1000)}"
+        self.context_ledger = ContextLedger()
+        self.artifact_store = ArtifactStore(Path(__file__).resolve().parents[1], self.session_id)
+        self._tool_call_counts: Dict[str, int] = {}
         self.self_tools = LocalSelfTools(self, config_path=config_path)
         self.remote_error: str | None = None
         self.remote_tools: List[Dict[str, Any]] = []
@@ -141,10 +150,12 @@ class LocalAgent:
         return self.ask(user_prompt)
 
     def ask(self, user_prompt: str) -> str:
+        self._tool_call_counts = {}
         self.memory.log_event("user.prompt", user_prompt, {"session_id": self.session_id})
         self.messages.append({"role": "user", "content": user_prompt})
         for step in range(self.max_steps):
             self._emit_status("thinking", f"step {step + 1}/{self.max_steps}")
+            self.context_ledger.record_request(self.messages, self.tools)
             response = self.llm.chat_completions(
                 model=self.model,
                 messages=self.messages,
@@ -153,6 +164,7 @@ class LocalAgent:
                 max_tokens=self.max_tokens,
                 tool_choice="auto",
             )
+            self.context_ledger.record_response_usage(response.get("usage") or {})
             choice = (response.get("choices") or [{}])[0]
             message = choice.get("message") or {}
             finish_reason = choice.get("finish_reason")
@@ -192,12 +204,14 @@ class LocalAgent:
         if name not in self._available_tool_names():
             self._emit_status("tool_error", name)
             raise RuntimeError(f"model requested unavailable tool: {name}")
-        try:
-            arguments = json.loads(raw_args)
-        except json.JSONDecodeError as exc:
-            raise RuntimeError(f"invalid tool arguments for {name}: {exc}") from exc
+        arguments = _parse_tool_arguments(raw_args, name)
         if not isinstance(arguments, dict):
             raise RuntimeError("tool arguments must decode to an object")
+        signature = name + ":" + json.dumps(arguments, ensure_ascii=False, sort_keys=True, default=str)
+        call_count = self._tool_call_counts.get(signature, 0) + 1
+        self._tool_call_counts[signature] = call_count
+        if call_count > 3:
+            raise RuntimeError(f"repeated tool call suppressed after {call_count - 1} identical attempts: {name}")
         self.memory.log_event(
             "tool.call",
             name,
@@ -217,17 +231,27 @@ class LocalAgent:
                 image_mime = str(data.get("mime_type") or image_mime)
                 if image_base64:
                     data["image_attached_to_next_message"] = True
+        model_tool_result, compaction_info = compact_tool_result(
+            tool_name=name,
+            result=tool_result,
+            artifact_store=self.artifact_store,
+        )
+        self.context_ledger.record_tool_compaction(compaction_info)
         self.messages.append(
             {
                 "role": "tool",
                 "tool_call_id": tool_call.get("id"),
-                "content": json.dumps(tool_result, ensure_ascii=False),
+                "content": json.dumps(model_tool_result, ensure_ascii=False),
             }
         )
         self.memory.log_event(
             "tool.result",
             name,
-            {"session_id": self.session_id, "result": _compact_json(tool_result)},
+            {
+                "session_id": self.session_id,
+                "result": _compact_json(model_tool_result),
+                "compaction": compaction_info,
+            },
         )
         if image_base64:
             self.messages.append(
@@ -301,6 +325,7 @@ class LocalAgent:
             }
         ]
         try:
+            self.context_ledger.record_request(final_messages, [])
             response = self.llm.chat_completions(
                 model=self.model,
                 messages=final_messages,
@@ -308,6 +333,7 @@ class LocalAgent:
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )
+            self.context_ledger.record_response_usage(response.get("usage") or {})
             choice = (response.get("choices") or [{}])[0]
             message = choice.get("message") or {}
             content = str(message.get("content") or "").strip()
@@ -453,6 +479,54 @@ class LocalAgent:
 
     def call_remote_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         return self.call_tool(name, arguments)
+
+    def context_status(self) -> Dict[str, Any]:
+        tool_names = [
+            tool["function"]["name"]
+            for tool in self.tools
+            if isinstance(tool.get("function"), dict) and isinstance(tool["function"].get("name"), str)
+        ]
+        message_chars = len(json.dumps(self.messages, ensure_ascii=False, default=str, separators=(",", ":")))
+        return {
+            "session_id": self.session_id,
+            "message_count": len(self.messages),
+            "message_chars": message_chars,
+            "device_context_chars": len(self.device_context),
+            "board_context_chars": len(self.board_context),
+            "memory_context_chars": len(self.memory_context),
+            "tool_count": len(tool_names),
+            "ledger": self.context_ledger.snapshot(),
+        }
+
+    def cost_status(self) -> Dict[str, Any]:
+        llm_cfg = self.config.get("llm", {})
+        return {
+            "provider": llm_cfg.get("provider", "openai"),
+            "model": self.model,
+            "endpoint": llm_cfg.get("base_url"),
+            "note": "Token counts are local estimates unless provider usage is returned by the API.",
+            "ledger": self.context_ledger.snapshot(),
+        }
+
+    def permissions_status(self) -> Dict[str, Any]:
+        tool_names = [
+            tool["function"]["name"]
+            for tool in self.tools
+            if isinstance(tool.get("function"), dict) and isinstance(tool["function"].get("name"), str)
+        ]
+        policies = tool_policy_snapshot(tool_names)
+        risk_counts: Dict[str, int] = {}
+        for policy in policies.values():
+            risk = str(policy.get("risk") or "unknown")
+            risk_counts[risk] = risk_counts.get(risk, 0) + 1
+        return {
+            "self_management_enabled": bool(self.config.get("self_management", {}).get("enabled", True)),
+            "allow_source_edits": bool(self.config.get("self_management", {}).get("allow_source_edits", True)),
+            "remote_device_online": not bool(self.remote_error),
+            "remote_error": self.remote_error,
+            "risk_counts": risk_counts,
+            "tool_policies": policies,
+        }
 
     def list_boards(self) -> Dict[str, Any]:
         return self.board_knowledge.list_boards()
@@ -630,6 +704,32 @@ def _compact_json(value: Any, max_chars: int = 6000) -> Any:
     if len(text) <= max_chars:
         return safe_value
     return text[: max_chars - 64] + "...<truncated>"
+
+
+def _parse_tool_arguments(raw_args: str, tool_name: str) -> Dict[str, Any]:
+    candidates = [raw_args]
+    stripped = raw_args.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if len(lines) >= 3:
+            candidates.append("\n".join(lines[1:-1]).strip())
+    if stripped and not stripped.endswith("}"):
+        repaired = stripped
+        repaired += "}" * max(0, stripped.count("{") - stripped.count("}"))
+        candidates.append(repaired)
+    for candidate in candidates:
+        try:
+            parsed = json.loads(candidate)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+        raise RuntimeError(f"tool arguments for {tool_name} must decode to an object")
+    try:
+        json.loads(raw_args)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"invalid tool arguments for {tool_name}: {exc}") from exc
+    raise RuntimeError(f"invalid tool arguments for {tool_name}")
 
 
 def _summarize_tool_result(name: str, result: Dict[str, Any]) -> str:

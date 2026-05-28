@@ -71,6 +71,7 @@ flowchart LR
 - **Device-node bridge**: connect Linux-capable boards through a lightweight JSONL TCP tool server.
 - **DeviceResearch traces**: record bring-up tasks as `task.json`, `plan.md`, and `trace.jsonl`.
 - **Persistent skills and board knowledge**: store reusable workflows, port maps, manual summaries, and device lessons.
+- **Context-aware agent loop**: compact large tool results, store artifacts, and expose estimated token/cost telemetry.
 - **Conservative tool boundary**: no unrestricted shell execution by default.
 
 ## Status
@@ -184,6 +185,9 @@ Replace `COM6` with the port shown by `/usb` or `/pio devices`.
 | `/setup` | Configure provider, API URL, model, and key. |
 | `/model` | Show the active provider, model, and endpoint. |
 | `/model list` | List models exposed by the configured API. |
+| `/cost` | Show estimated prompt tokens, provider usage, and compaction savings. |
+| `/permissions` | Show tool risk classes and compaction policies. |
+| `/context budget` | Inspect message/context sizes and the context ledger. |
 | `/usb` | Scan USB devices and serial ports. |
 | `/serial monitor <port> [baud] [seconds]` | Read bounded serial output. |
 | `/deps install platformio` | Install an allowlisted local dependency. |
@@ -209,6 +213,17 @@ Provider snippets live in `configs/providers/`:
 | `deepseek-compatible.example.json` | DeepSeek's OpenAI-compatible API. |
 
 Copy the `llm` section you need into `configs/local_agent.json`, or run `micius --setup`.
+
+## Agent Loop
+
+Micius keeps a lightweight context ledger for long hardware sessions:
+
+- Large serial logs, PlatformIO output, diagnostic reports, and camera payloads are written to `data/tool_artifacts/`.
+- The model receives a compact summary plus the artifact path instead of repeated full logs.
+- Tool policies record risk class, parallel-safety, and compaction behavior.
+- `/cost`, `/permissions`, and `/context budget` expose the current loop state.
+
+This is the first step toward a cache-stable, cost-aware loop for long-running embedded workflows.
 
 ## DeviceResearch
 

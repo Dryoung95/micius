@@ -28,6 +28,7 @@ jobs:
             local_agent/agent.py \
             local_agent/cli.py \
             local_agent/self_tools.py \
+            local_agent/context_engine.py \
             local_agent/device_research.py \
             atlas_agent/server.py \
             atlas_agent/tools.py \
