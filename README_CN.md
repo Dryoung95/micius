@@ -55,6 +55,12 @@ python -m pip install -e .
 micius --setup
 ```
 
+也可以使用命令式快捷入口：
+
+```bash
+micius setup
+```
+
 配置向导支持：
 
 - `provider: "openai"`：用于 OpenAI 兼容服务，例如 OpenAI、DeepSeek 兼容网关或其他 `/v1/chat/completions` endpoint。
@@ -80,7 +86,28 @@ micius --setup
 micius
 ```
 
+正常启动后应该看到类似：
+
+```text
+Micius-Agent v0.1
+Embedded Agent Workbench for general embedded devices
+micius>
+```
+
+如果你看到的是 `Welcome to Codex, OpenAI's command-line coding agent`，说明启动的是 OpenAI Codex CLI，不是 Micius。请回到本仓库目录后运行 `micius` 或 `python -m local_agent.cli`。
+
 也可以复制 `configs/local_agent.example.json` 为 `configs/local_agent.json` 后手动编辑。不要把 `configs/local_agent.json` 提交到 git。
+
+## 无硬件检查
+
+即使还没有连接开发板，Micius 也应该可以完成基础自检：
+
+```bash
+micius demo
+micius doctor
+```
+
+`micius demo` 用来确认 CLI、配置、本地工具和无硬件路径已经安装成功。`micius doctor` 会输出 JSON 诊断报告。如果还想测试模型 endpoint，可以运行 `micius doctor api`。
 
 ## 快速开始
 
@@ -101,6 +128,8 @@ micius
 
 | 命令 | 用途 |
 |---|---|
+| `micius demo` | 运行无硬件安装演示。 |
+| `micius doctor [api]` | 运行非交互式本地诊断。 |
 | `/setup` | 配置 provider、API URL、模型名和 API key。 |
 | `/model` | 查看当前 provider、模型和 endpoint。 |
 | `/model list` | 列出当前 API 暴露的模型。 |
@@ -117,6 +146,18 @@ micius
 | `/restart` | 重启 CLI 并重新加载源码和配置。 |
 
 在 Micius 中运行 `/commands` 可以查看完整命令面板。
+
+## 模型配置模板
+
+Provider 示例位于 `configs/providers/`：
+
+| 模板 | 用途 |
+|---|---|
+| `openai-compatible.example.json` | OpenAI 兼容的 `/v1/chat/completions` 网关。 |
+| `anthropic-claude.example.json` | 原生 Anthropic Claude `/v1/messages` API。 |
+| `deepseek-compatible.example.json` | DeepSeek 的 OpenAI 兼容 API。 |
+
+可以把需要的 `llm` 片段复制到 `configs/local_agent.json`，也可以直接运行 `micius --setup`。
 
 ## DeviceResearch
 
@@ -147,7 +188,7 @@ data/device_research/<task_id>/
 对于 Linux 类开发板，可以在开发板上运行轻量设备节点服务器：
 
 ```bash
-python -m atlas_agent.server --host 0.0.0.0 --port 8765
+python -m micius_device_node.server --host 0.0.0.0 --port 8765
 ```
 
 然后配置 `configs/local_agent.json`，让 `device_node.host` 指向开发板 IP，再运行：
@@ -159,7 +200,7 @@ python -m atlas_agent.server --host 0.0.0.0 --port 8765
 /script list
 ```
 
-包中仍保留 `atlas_agent` 这个历史模块名，因为最早的原型面向 Atlas 类硬件。公开命令名是 `micius-device-node`。
+包中仍保留 `atlas_agent` 这个历史模块名，因为最早的原型面向 Atlas 类硬件。新的文档和自动生成命令会使用通用的 `micius_device_node` 模块，以及公开命令 `micius-device-node`。
 
 ## 板卡知识
 
@@ -179,7 +220,8 @@ python -m atlas_agent.server --host 0.0.0.0 --port 8765
 
 ```text
 local_agent/        CLI、模型客户端、本地工具、记忆、DeviceResearch
-atlas_agent/        轻量嵌入式设备节点服务器
+micius_device_node/ 通用嵌入式设备节点入口
+atlas_agent/        为兼容保留的历史实现
 shared/             JSONL RPC 协议辅助代码
 board_knowledge/    板卡 profiles、手册摘要和技能
 configs/            示例本地配置

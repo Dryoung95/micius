@@ -1,0 +1,12 @@
+{
+  "llm": {
+    "provider": "openai",
+    "base_url": "https://api.deepseek.com/v1",
+    "model": "deepseek-chat",
+    "api_key_env": "DEEPSEEK_API_KEY",
+    "timeout_sec": 60,
+    "transport": "auto",
+    "temperature": 0.2,
+    "max_tokens": 512
+  }
+}

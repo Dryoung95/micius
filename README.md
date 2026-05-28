@@ -55,6 +55,12 @@ Configure your model:
 micius --setup
 ```
 
+You can also use the command-style shortcut:
+
+```bash
+micius setup
+```
+
 The setup wizard supports:
 
 - `provider: "openai"` for OpenAI-compatible endpoints such as OpenAI, DeepSeek-compatible gateways, or other `/v1/chat/completions` services.
@@ -80,7 +86,28 @@ Start the CLI:
 micius
 ```
 
+Expected startup:
+
+```text
+Micius-Agent v0.1
+Embedded Agent Workbench for general embedded devices
+micius>
+```
+
+If you see `Welcome to Codex, OpenAI's command-line coding agent`, you started OpenAI Codex CLI instead of Micius. Return to this repository directory and run `micius` or `python -m local_agent.cli`.
+
 You can also copy `configs/local_agent.example.json` to `configs/local_agent.json` and edit it manually. Do not commit `configs/local_agent.json`.
+
+## No-Hardware Check
+
+Micius should still be useful before a board is connected:
+
+```bash
+micius demo
+micius doctor
+```
+
+`micius demo` confirms that the CLI, config, local tools, and no-hardware path are installed. `micius doctor` prints a JSON diagnostic report. Use `micius doctor api` when you also want to test the configured model endpoint.
 
 ## Quick Start
 
@@ -101,6 +128,8 @@ Replace `COM6` with the port shown by `/usb` or `/pio devices`.
 
 | Command | Purpose |
 |---|---|
+| `micius demo` | Run a no-hardware installation demo. |
+| `micius doctor [api]` | Run non-interactive local diagnostics. |
 | `/setup` | Configure provider, API URL, model, and key. |
 | `/model` | Show the active provider, model, and endpoint. |
 | `/model list` | List models exposed by the configured API. |
@@ -117,6 +146,18 @@ Replace `COM6` with the port shown by `/usb` or `/pio devices`.
 | `/restart` | Restart the CLI and reload source/config. |
 
 Run `/commands` inside Micius for the full command palette.
+
+## Provider Templates
+
+Provider snippets live in `configs/providers/`:
+
+| Template | Use case |
+|---|---|
+| `openai-compatible.example.json` | OpenAI-compatible `/v1/chat/completions` gateways. |
+| `anthropic-claude.example.json` | Native Anthropic Claude `/v1/messages` API. |
+| `deepseek-compatible.example.json` | DeepSeek's OpenAI-compatible API. |
+
+Copy the `llm` section you need into `configs/local_agent.json`, or run `micius --setup`.
 
 ## DeviceResearch
 
@@ -147,7 +188,7 @@ See [docs/DeviceResearch.md](docs/DeviceResearch.md) for the design.
 For Linux-capable boards, run the lightweight device-node server on the board:
 
 ```bash
-python -m atlas_agent.server --host 0.0.0.0 --port 8765
+python -m micius_device_node.server --host 0.0.0.0 --port 8765
 ```
 
 Then configure `configs/local_agent.json` so `device_node.host` points to the board IP and run:
@@ -159,7 +200,7 @@ Then configure `configs/local_agent.json` so `device_node.host` points to the bo
 /script list
 ```
 
-The package still contains the legacy `atlas_agent` module name because the first prototype targeted Atlas-class hardware. The public command name is `micius-device-node`.
+The package still contains the legacy `atlas_agent` module name because the first prototype targeted Atlas-class hardware. New documentation and generated commands use the generic `micius_device_node` module and the public `micius-device-node` command.
 
 ## Board Knowledge
 
@@ -179,7 +220,8 @@ The goal is to build durable device memory: connected peripherals, port names, s
 
 ```text
 local_agent/        CLI, model client, local tools, memory, DeviceResearch
-atlas_agent/        Lightweight embedded device-node server
+micius_device_node/ Generic embedded device-node entry point
+atlas_agent/        Legacy implementation kept for compatibility
 shared/             JSONL RPC protocol helpers
 board_knowledge/    Board profiles, manual summaries, and skills
 configs/            Example local configuration files

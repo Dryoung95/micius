@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Compile Python sources
+        run: |
+          python -m py_compile \
+            local_agent/llm_client.py \
+            local_agent/agent.py \
+            local_agent/cli.py \
+            local_agent/self_tools.py \
+            local_agent/device_research.py \
+            atlas_agent/server.py \
+            atlas_agent/tools.py \
+            micius_device_node/server.py \
+            shared/protocol.py
+
+      - name: No-hardware demo smoke test
+        env:
+          MICIUS_SIMPLE_BANNER: "1"
+          MICIUS_NO_MASCOT_ANIMATION: "1"
+          MICIUS_SIMPLE_PROMPT: "1"
+          MICIUS_NO_COLOR: "1"
+        run: python -m local_agent.cli --config configs/local_agent.example.json demo
+
+      - name: Interactive CLI startup smoke test
+        env:
+          MICIUS_SIMPLE_BANNER: "1"
+          MICIUS_NO_MASCOT_ANIMATION: "1"
+          MICIUS_SIMPLE_PROMPT: "1"
+          MICIUS_NO_COLOR: "1"
+        run: printf '/exit\n' | python -m local_agent.cli --config configs/local_agent.example.json --no-auto-device

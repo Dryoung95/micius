@@ -1268,6 +1268,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
                 "local_agent/device_research.py",
                 "local_agent/micius_memory.py",
                 "local_agent/board_knowledge.py",
+                "micius_device_node/server.py",
                 "atlas_agent/server.py",
                 "atlas_agent/tools.py",
             ]
@@ -1337,6 +1338,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
         roots = [
             self.project_root / "configs",
             self.project_root / "local_agent",
+            self.project_root / "micius_device_node",
             self.project_root / "atlas_agent",
             self.project_root / "shared",
             self.project_root / "board_knowledge",

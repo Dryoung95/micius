@@ -191,15 +191,15 @@ def build_device_node_commands(config: Dict[str, Any], ssh_user: str | None = No
     user = ssh_user or str(ssh_cfg.get("user") or "<user>")
     ssh_port = int(ssh_cfg.get("port") or 22)
     project_name = PROJECT_ROOT.name
-    local_manifest = PROJECT_ROOT / "data" / "atlas_manifest.json"
-    remote_manifest = "data/atlas_manifest.json"
+    local_manifest = PROJECT_ROOT / "data" / "device_manifest.json"
+    remote_manifest = "data/device_manifest.json"
 
     return {
         "local_tool_server": _join_command(
             [
                 sys.executable,
                 "-m",
-                "atlas_agent.server",
+                "micius_device_node.server",
                 "--host",
                 "127.0.0.1",
                 "--port",
@@ -212,7 +212,7 @@ def build_device_node_commands(config: Dict[str, Any], ssh_user: str | None = No
         ),
         "linux_device_tool_server": (
             f"cd ~/{project_name} && "
-            f"python3 -m atlas_agent.server --host 0.0.0.0 --port {port} "
+            f"python3 -m micius_device_node.server --host 0.0.0.0 --port {port} "
             f"--device-id {device_id} --manifest {remote_manifest}"
         ),
         "ssh_interactive": f"ssh -p {ssh_port} {user}@{host}",

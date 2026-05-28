@@ -1,0 +1,12 @@
+{
+  "llm": {
+    "provider": "openai",
+    "base_url": "https://api.example.com/v1",
+    "model": "your-model-name",
+    "api_key_env": "LLM_API_KEY",
+    "timeout_sec": 60,
+    "transport": "auto",
+    "temperature": 0.2,
+    "max_tokens": 512
+  }
+}

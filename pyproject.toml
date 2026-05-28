@@ -16,8 +16,8 @@ keywords = ["agent", "embedded", "esp32", "atlas", "robotics", "cli"]
 
 [project.scripts]
 micius = "local_agent.cli:main"
-micius-device-node = "atlas_agent.server:main"
+micius-device-node = "micius_device_node.server:main"
 atlas-agent-server = "atlas_agent.server:main"
 
 [tool.setuptools]
-packages = ["atlas_agent", "local_agent", "shared"]
+packages = ["atlas_agent", "local_agent", "micius_device_node", "shared"]

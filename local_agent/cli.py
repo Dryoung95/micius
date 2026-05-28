@@ -253,12 +253,16 @@ def main() -> None:
         action="store_true",
         help="Do not auto-start the local embedded device tool server when the configured host is localhost.",
     )
+    parser.add_argument("shortcut", nargs="*", help="Optional shortcut: doctor [api], demo, or setup.")
     args = parser.parse_args()
 
     restart_requested = False
     config = load_config(args.config)
     if args.setup:
         _run_setup_wizard(config, Path(args.config), agent=None)
+        return
+    if args.shortcut:
+        _run_shortcut_command(args.shortcut, config, Path(args.config))
         return
     device_process = None
     if not args.no_auto_device:
@@ -302,6 +306,60 @@ def _create_agent(config: Dict[str, Any], config_path: str | None = None) -> Loc
         return LocalAgent(config, config_path=config_path)
     except Exception as exc:
         raise SystemExit(f"failed to initialize micius: {type(exc).__name__}: {exc}") from exc
+
+
+def _run_shortcut_command(parts: list[str], config: Dict[str, Any], config_path: Path) -> None:
+    command = parts[0].lstrip("/").lower()
+    if command == "setup":
+        _run_setup_wizard(config, config_path, agent=None)
+        return
+    if command in {"doctor", "check", "verify"}:
+        action = " ".join(parts[1:]).strip()
+        agent = _create_agent(config, str(config_path))
+        _handle_doctor_command("/doctor" + (f" {action}" if action else ""), config, config_path, agent)
+        return
+    if command in {"demo", "try"}:
+        agent = _create_agent(config, str(config_path))
+        _print_demo_command(config, config_path, agent)
+        return
+    raise SystemExit(f"unknown micius shortcut: {parts[0]}\ntry: micius demo | micius doctor | micius --setup")
+
+
+def _print_demo_command(config: Dict[str, Any], config_path: Path, agent: LocalAgent) -> None:
+    llm = config.get("llm", {})
+    node = get_device_node_config(config)
+    tool_names = {
+        tool["function"]["name"]
+        for tool in agent.tools
+        if isinstance(tool.get("function"), dict) and isinstance(tool["function"].get("name"), str)
+    }
+    local_tools = sorted(name for name in tool_names if name.startswith("micius_"))
+    print("Micius demo")
+    print("-----------")
+    print("Local mode: OK")
+    print(f"Config: {config_path}")
+    print(f"Provider: {llm.get('provider', 'openai')}")
+    print(f"Model: {llm.get('model', '<not configured>')}")
+    print(f"Device node: {node.get('host')}:{node.get('port')}")
+    if getattr(agent, "remote_error", None):
+        print("Device node status: not connected; this is fine for a first no-hardware test.")
+    else:
+        print("Device node status: connected")
+    print(f"Local tools: {len(local_tools)} available")
+    print()
+    print("Expected interactive startup:")
+    print("  micius")
+    print("  ...")
+    print("  micius>")
+    print()
+    print("No-hardware commands to try inside Micius:")
+    print("  /doctor")
+    print("  /usb")
+    print("  /board list")
+    print("  /model")
+    print("  /commands")
+    print()
+    print('If you see "Welcome to Codex", you opened OpenAI Codex CLI, not Micius.')
 
 
 def _restart_current_process() -> None:
@@ -2720,7 +2778,7 @@ def _ensure_local_device_server(config: Dict[str, Any]) -> Optional[subprocess.P
     command = [
         sys.executable,
         "-m",
-        "atlas_agent.server",
+        "micius_device_node.server",
         "--host",
         host,
         "--port",
@@ -2728,7 +2786,7 @@ def _ensure_local_device_server(config: Dict[str, Any]) -> Optional[subprocess.P
         "--device-id",
         device_id,
         "--manifest",
-        str(project_root / "data" / "atlas_manifest.json"),
+        str(project_root / "data" / "device_manifest.json"),
     ]
     creationflags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
     process = subprocess.Popen(
