@@ -49,6 +49,7 @@
   },
   "self_management": {
     "enabled": true,
-    "allow_source_edits": true
+    "allow_source_edits": true,
+    "extra_allowed_roots": []
   }
 }

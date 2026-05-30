@@ -152,18 +152,25 @@ class LocalAgent:
     def ask(self, user_prompt: str) -> str:
         self._tool_call_counts = {}
         self.memory.log_event("user.prompt", user_prompt, {"session_id": self.session_id})
+        turn_start = len(self.messages)
+        tool_activity = False
         self.messages.append({"role": "user", "content": user_prompt})
         for step in range(self.max_steps):
             self._emit_status("thinking", f"step {step + 1}/{self.max_steps}")
             self.context_ledger.record_request(self.messages, self.tools)
-            response = self.llm.chat_completions(
-                model=self.model,
-                messages=self.messages,
-                tools=self.tools,
-                temperature=self.temperature,
-                max_tokens=self.max_tokens,
-                tool_choice="auto",
-            )
+            try:
+                response = self.llm.chat_completions(
+                    model=self.model,
+                    messages=self.messages,
+                    tools=self.tools,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
+                    tool_choice="auto",
+                )
+            except Exception as exc:
+                if tool_activity:
+                    return self._fallback_after_llm_error(exc, turn_start)
+                raise
             self.context_ledger.record_response_usage(response.get("usage") or {})
             choice = (response.get("choices") or [{}])[0]
             message = choice.get("message") or {}
@@ -175,8 +182,10 @@ class LocalAgent:
                 for tool_call in tool_calls:
                     try:
                         self._handle_tool_call(tool_call)
+                        tool_activity = True
                     except Exception as exc:
                         self._append_tool_error(tool_call, exc)
+                        tool_activity = True
                 continue
             content = message.get("content")
             if content is None:
@@ -186,6 +195,17 @@ class LocalAgent:
             self._emit_status("final", "answer ready")
             return str(content)
         return self._finalize_after_max_steps()
+
+    def _fallback_after_llm_error(self, exc: Exception, turn_start: int) -> str:
+        self._emit_status("final", "answer ready")
+        content = _summarize_turn_without_llm(self.messages[turn_start:], exc)
+        self.messages.append({"role": "assistant", "content": content})
+        self.memory.log_event(
+            "assistant.response",
+            content,
+            {"session_id": self.session_id, "fallback_after_llm_error": True},
+        )
+        return content
 
     def _append_assistant_message(self, message: Dict[str, Any]) -> None:
         assistant_entry: Dict[str, Any] = {"role": "assistant", "content": message.get("content")}
@@ -730,6 +750,65 @@ def _parse_tool_arguments(raw_args: str, tool_name: str) -> Dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"invalid tool arguments for {tool_name}: {exc}") from exc
     raise RuntimeError(f"invalid tool arguments for {tool_name}")
+
+
+def _summarize_turn_without_llm(turn_messages: List[Dict[str, Any]], exc: Exception) -> str:
+    tool_names_by_id: Dict[str, str] = {}
+    tool_summaries: List[str] = []
+    for message in turn_messages:
+        if message.get("role") == "assistant":
+            for tool_call in message.get("tool_calls") or []:
+                function = tool_call.get("function") or {}
+                tool_id = str(tool_call.get("id") or "")
+                name = str(function.get("name") or "tool")
+                if tool_id:
+                    tool_names_by_id[tool_id] = name
+        if message.get("role") != "tool":
+            continue
+        tool_id = str(message.get("tool_call_id") or "")
+        tool_name = tool_names_by_id.get(tool_id, "tool")
+        payload = _loads_json_object(message.get("content"))
+        tool_summaries.append(_summarize_tool_payload(tool_name, payload))
+    lines = [
+        "模型服务在工具执行后暂时不可用，但本轮工具结果已经返回。",
+        f"最终自然语言整理失败：{type(exc).__name__}: {exc}",
+    ]
+    if tool_summaries:
+        lines.append("")
+        lines.append("已收到的工具结果：")
+        lines.extend(f"- {item}" for item in tool_summaries)
+    lines.append("")
+    lines.append("这通常不是配置写入失败。若结果包含 restart_recommended=true，请运行 `/restart` 后继续。")
+    return "\n".join(lines)
+
+
+def _loads_json_object(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        return {"content": str(value)}
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return {"content": value}
+    return parsed if isinstance(parsed, dict) else {"content": parsed}
+
+
+def _summarize_tool_payload(tool_name: str, payload: Dict[str, Any]) -> str:
+    parts = [tool_name]
+    for key in ("status", "error_type", "error", "changed_sections", "persisted", "config_path", "restart_recommended", "artifact_path"):
+        if key in payload:
+            parts.append(f"{key}={payload[key]}")
+    if len(parts) == 1:
+        parts.append(_short_repr(payload))
+    return ", ".join(parts)
+
+
+def _short_repr(value: Any, max_chars: int = 500) -> str:
+    text = json.dumps(value, ensure_ascii=False, default=str)
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 32] + "...<truncated>"
 
 
 def _summarize_tool_result(name: str, result: Dict[str, Any]) -> str:

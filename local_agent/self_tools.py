@@ -1349,6 +1349,11 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             self.project_root / "brand",
             self.project_root / "site",
         ]
+        extra_roots = self.owner.config.get("self_management", {}).get("extra_allowed_roots", [])
+        if isinstance(extra_roots, list):
+            for raw_root in extra_roots:
+                if isinstance(raw_root, str) and raw_root.strip():
+                    roots.append(Path(raw_root))
         return [path.resolve() for path in roots]
 
     def _allowed_files(self) -> List[Path]:
