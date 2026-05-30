@@ -539,9 +539,12 @@ class LocalAgent:
         for policy in policies.values():
             risk = str(policy.get("risk") or "unknown")
             risk_counts[risk] = risk_counts.get(risk, 0) + 1
+        self_cfg = self.config.get("self_management", {})
         return {
-            "self_management_enabled": bool(self.config.get("self_management", {}).get("enabled", True)),
-            "allow_source_edits": bool(self.config.get("self_management", {}).get("allow_source_edits", True)),
+            "self_management_enabled": bool(self_cfg.get("enabled", True)),
+            "allow_source_edits": bool(self_cfg.get("allow_source_edits", True)),
+            "full_filesystem_access": bool(self_cfg.get("full_filesystem_access") or self_cfg.get("allow_all_files")),
+            "extra_allowed_roots": self_cfg.get("extra_allowed_roots", []),
             "remote_device_online": not bool(self.remote_error),
             "remote_error": self.remote_error,
             "risk_counts": risk_counts,

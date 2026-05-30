@@ -503,6 +503,7 @@ class LocalSelfTools:
             "model": self.owner.model,
             "config_path": str(self.config_path) if self.config_path else None,
             "project_root": str(self.project_root),
+            "full_filesystem_access": self._full_filesystem_access_allowed(),
             "allowed_edit_roots": [str(path) for path in self._allowed_roots()],
             "allowed_single_files": [str(path) for path in self._allowed_files()],
             "source_edits_allowed": self._source_edits_allowed(),
@@ -786,7 +787,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
         return {
             "status": status,
             "operation": operation,
-            "project_dir": str(project_dir.relative_to(self.project_root)).replace("\\", "/") if project_dir else None,
+            "project_dir": self._display_path(project_dir) if project_dir else None,
             "command": cmd,
             "returncode": returncode,
             "elapsed_sec": round(time.time() - started, 3),
@@ -811,11 +812,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             return []
         files = []
         for path in sorted(build_dir.glob("*/firmware.bin")):
-            try:
-                rel = path.relative_to(self.project_root)
-            except ValueError:
-                continue
-            files.append(str(rel).replace("\\", "/"))
+            files.append(self._display_path(path))
         return files
 
     def _web_search(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -1054,13 +1051,9 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             for path in sorted(root.glob("**/*.bin"))[:80]:
                 if any(part in {"__pycache__", ".git", ".venv", "node_modules"} for part in path.parts):
                     continue
-                try:
-                    rel = path.relative_to(self.project_root)
-                except ValueError:
-                    continue
                 files.append(
                     {
-                        "path": str(rel).replace("\\", "/"),
+                        "path": self._display_path(path),
                         "size_bytes": path.stat().st_size,
                         "modified_at": _format_timestamp(path.stat().st_mtime),
                     }
@@ -1157,7 +1150,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             if path.is_file() and self._is_allowed_path(path):
                 files.append(
                     {
-                        "path": str(path.relative_to(self.project_root)).replace("\\", "/"),
+                        "path": self._display_path(path),
                         "size_bytes": path.stat().st_size,
                     }
                 )
@@ -1174,7 +1167,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
                 continue
             entries.append(
                 {
-                    "path": str(path.relative_to(self.project_root)).replace("\\", "/"),
+                    "path": self._display_path(path),
                     "kind": "dir" if path.is_dir() else "file",
                     "size_bytes": path.stat().st_size if path.is_file() else None,
                 }
@@ -1184,7 +1177,11 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             "base": str(self.project_root),
             "pattern": "allowed-roots",
             "files": entries,
-            "note": "Project root listing is limited to self-management allowlist entries.",
+            "note": (
+                "Full filesystem access is enabled; pass an absolute path such as S:\\ to list outside the project."
+                if self._full_filesystem_access_allowed()
+                else "Project root listing is limited to self-management allowlist entries."
+            ),
         }
 
     def _file_read(self, args: Dict[str, Any]) -> Dict[str, Any]:
@@ -1201,7 +1198,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             text = _redact_text(text)
         return {
             "status": "ok",
-            "path": str(path.relative_to(self.project_root)).replace("\\", "/"),
+            "path": self._display_path(path),
             "content": text,
             "truncated": truncated,
         }
@@ -1220,7 +1217,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
         path.write_text(content, encoding="utf-8")
         return {
             "status": "written",
-            "path": str(path.relative_to(self.project_root)).replace("\\", "/"),
+            "path": self._display_path(path),
             "backup": str(backup) if backup else None,
             "bytes": path.stat().st_size,
             "restart_required": self._is_source_file(path),
@@ -1246,7 +1243,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
         path.write_text(text.replace(old_text, new_text), encoding="utf-8")
         return {
             "status": "replaced",
-            "path": str(path.relative_to(self.project_root)).replace("\\", "/"),
+            "path": self._display_path(path),
             "replacements": count,
             "backup": str(backup) if backup else None,
             "restart_required": self._is_source_file(path),
@@ -1323,6 +1320,10 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             resolved = path
         if any(part in {".git", "__pycache__", ".venv", "node_modules"} for part in resolved.parts):
             return False
+        if self._full_filesystem_access_allowed():
+            if self._is_source_file(resolved) and not self._source_edits_allowed():
+                return False
+            return True
         if resolved in self._allowed_files():
             return True
         for root in self._allowed_roots():
@@ -1370,16 +1371,27 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
     def _source_edits_allowed(self) -> bool:
         return bool(self.owner.config.get("self_management", {}).get("allow_source_edits", True))
 
+    def _full_filesystem_access_allowed(self) -> bool:
+        config = self.owner.config.get("self_management", {})
+        return bool(config.get("full_filesystem_access") or config.get("allow_all_files"))
+
     def _is_source_file(self, path: Path) -> bool:
         return path.suffix in {".py", ".cmd"} or path.name in {"micius", "pyproject.toml"}
 
     def _backup(self, path: Path) -> Path:
         self.backup_dir.mkdir(parents=True, exist_ok=True)
-        rel = path.relative_to(self.project_root).as_posix()
+        rel = self._display_path(path)
         safe = re.sub(r"[^a-zA-Z0-9_.-]+", "__", rel)
         backup = self.backup_dir / f"{int(time.time() * 1000)}__{safe}.bak"
         shutil.copy2(path, backup)
         return backup
+
+    def _display_path(self, path: Path) -> str:
+        resolved = path.resolve()
+        try:
+            return str(resolved.relative_to(self.project_root)).replace("\\", "/")
+        except ValueError:
+            return str(resolved)
 
 
 def _deep_merge(target: Dict[str, Any], patch: Dict[str, Any]) -> None:

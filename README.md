@@ -186,7 +186,9 @@ Replace `COM6` with the port shown by `/usb` or `/pio devices`.
 | `/model` | Show the active provider, model, and endpoint. |
 | `/model list` | List models exposed by the configured API. |
 | `/cost` | Show estimated prompt tokens, provider usage, and compaction savings. |
-| `/permissions` | Show tool risk classes and compaction policies. |
+| `/permissions` | Show tool risk classes, edit permissions, and compaction policies. |
+| `/permissions all-files on` | Grant local file tools full filesystem access on this machine. |
+| `/permissions all-files off` | Return local file tools to the configured allowlist. |
 | `/context budget` | Inspect message/context sizes and the context ledger. |
 | `/usb` | Scan USB devices and serial ports. |
 | `/serial monitor <port> [baud] [seconds]` | Read bounded serial output. |
@@ -301,6 +303,7 @@ data/               Runtime reports and traces, ignored except .gitkeep
 Micius-Agent keeps risky operations behind explicit tools:
 
 - API keys live in local config or environment variables and are ignored by git.
+- Local file tools default to a self-management allowlist. Use `/permissions all-files on` only when you intentionally want Micius to inspect or edit files outside the project.
 - Dependency installation is allowlisted.
 - PlatformIO operations are restricted to project directories with `platformio.ini`.
 - Serial monitoring is bounded by duration and byte limits.

@@ -56,7 +56,7 @@ COMMAND_DESCRIPTIONS = {
     "/connect [status|doctor|refresh|commands|ssh]": "Diagnose and refresh the configured embedded device-node connection.",
     "/context [device|board|memory|all|refresh]": "Inspect or refresh loaded model context.",
     "/cost": "Show estimated prompt tokens, provider usage, and compaction savings.",
-    "/permissions": "Show tool risk classes, compaction policies, and edit permissions.",
+    "/permissions [all-files on|off|status]": "Show permissions or grant/revoke full local filesystem access.",
     "/memory [show|add|user|search|path]": "Read or update long-term project memory.",
     "/skill [list|show|use|add|search|delete]": "Manage reusable Micius workflow skills.",
     "/learn fact <text>": "Persist a stable device or project fact.",
@@ -141,7 +141,7 @@ COMMAND_GROUPS = [
             "/connect [status|doctor|refresh|commands|ssh]",
             "/context [device|board|memory|all|refresh]",
             "/cost",
-            "/permissions",
+            "/permissions [all-files on|off|status]",
             "/memory [show|add|user|search|path]",
             "/skill [list|show|use|add|search|delete]",
             "/learn fact <text>",
@@ -568,7 +568,7 @@ def _handle_command(line: str, config: Dict[str, Any], config_path: Path, agent:
         _handle_cost_command(agent)
         return False
     if command in {"/permissions", "/perms"}:
-        _handle_permissions_command(agent)
+        _handle_permissions_command(line, config, config_path, agent)
         return False
     if command == "/memory":
         _handle_memory_command(line, agent)
@@ -1970,8 +1970,56 @@ def _handle_cost_command(agent: LocalAgent) -> None:
     print(json.dumps(agent.cost_status(), ensure_ascii=False, indent=2))
 
 
-def _handle_permissions_command(agent: LocalAgent) -> None:
+def _handle_permissions_command(line: str, config: Dict[str, Any], config_path: Path, agent: LocalAgent) -> None:
+    parts = line.split()
+    if len(parts) >= 2 and parts[1].lower() in {"all-files", "filesystem", "fs"}:
+        action = parts[2].lower() if len(parts) >= 3 else "status"
+        if action in {"status", "show"}:
+            print(json.dumps(_full_filesystem_permission_status(config, config_path), ensure_ascii=False, indent=2))
+            return
+        if action in {"on", "enable", "enabled", "true", "yes"}:
+            print(json.dumps(_set_full_filesystem_access(config, config_path, agent, True), ensure_ascii=False, indent=2))
+            return
+        if action in {"off", "disable", "disabled", "false", "no"}:
+            print(json.dumps(_set_full_filesystem_access(config, config_path, agent, False), ensure_ascii=False, indent=2))
+            return
+        print("usage: /permissions all-files [on|off|status]", file=sys.stderr)
+        return
     print(json.dumps(agent.permissions_status(), ensure_ascii=False, indent=2))
+
+
+def _full_filesystem_permission_status(config: Dict[str, Any], config_path: Path) -> Dict[str, Any]:
+    self_cfg = config.get("self_management", {})
+    return {
+        "status": "ok",
+        "full_filesystem_access": bool(self_cfg.get("full_filesystem_access") or self_cfg.get("allow_all_files")),
+        "config_path": str(config_path),
+        "note": "When enabled, Micius local file tools can read/write outside the project allowlist, except blocked cache/repo internals.",
+    }
+
+
+def _set_full_filesystem_access(
+    config: Dict[str, Any],
+    config_path: Path,
+    agent: LocalAgent,
+    enabled: bool,
+) -> Dict[str, Any]:
+    self_cfg = config.setdefault("self_management", {})
+    self_cfg["full_filesystem_access"] = bool(enabled)
+    self_cfg.pop("allow_all_files", None)
+    agent.apply_runtime_config(["self_management"], reset=False)
+    _save_config(config_path, config)
+    return {
+        "status": "updated",
+        "full_filesystem_access": bool(enabled),
+        "config_path": str(config_path),
+        "restart_recommended": False,
+        "warning": (
+            "Full filesystem access is powerful. Keep secrets redacted when sharing logs."
+            if enabled
+            else "Micius is back to the configured self-management allowlist."
+        ),
+    }
 
 
 def _handle_memory_command(line: str, agent: LocalAgent) -> None:

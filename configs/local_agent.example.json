@@ -50,6 +50,7 @@
   "self_management": {
     "enabled": true,
     "allow_source_edits": true,
+    "full_filesystem_access": false,
     "extra_allowed_roots": []
   }
 }

@@ -186,7 +186,9 @@ micius doctor
 | `/model` | 查看当前 provider、模型和 endpoint。 |
 | `/model list` | 列出当前 API 暴露的模型。 |
 | `/cost` | 查看估算 prompt tokens、provider usage 和压缩节省。 |
-| `/permissions` | 查看工具风险等级和压缩策略。 |
+| `/permissions` | 查看工具风险等级、编辑权限和压缩策略。 |
+| `/permissions all-files on` | 授权本机文件工具访问全盘文件。 |
+| `/permissions all-files off` | 恢复到配置中的文件允许列表。 |
 | `/context budget` | 查看消息、上下文大小和 context ledger。 |
 | `/usb` | 扫描 USB 设备和串口。 |
 | `/serial monitor <port> [baud] [seconds]` | 限时读取串口输出。 |
@@ -301,6 +303,7 @@ data/               运行时报告和轨迹，除 .gitkeep 外默认忽略
 Micius-Agent 会把高风险操作放在显式工具边界之后：
 
 - API key 存在本地配置或环境变量中，并被 git 忽略。
+- 本地文件工具默认只访问自管理允许列表。只有明确需要 Micius 检查或编辑项目外文件时，才使用 `/permissions all-files on`。
 - 依赖安装使用允许列表。
 - PlatformIO 操作限制在带 `platformio.ini` 的工程目录中。
 - 串口监视有读取时长和字节数限制。
