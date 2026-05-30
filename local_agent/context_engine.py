@@ -29,6 +29,7 @@ TOOL_POLICIES: Dict[str, ToolPolicy] = {
     "micius_esp32_flash": ToolPolicy("firmware_flash", False, "artifact", 4000),
     "micius_set_model": ToolPolicy("config_write", False, "full", 4000),
     "micius_config_update": ToolPolicy("config_write", False, "summary", 5000),
+    "micius_pdf_read": ToolPolicy("read_only", True, "artifact", 5000),
     "micius_file_write": ToolPolicy("file_write", False, "summary", 5000),
     "micius_file_replace": ToolPolicy("file_write", False, "summary", 5000),
     "capture_camera_frame": ToolPolicy("hardware_read", False, "artifact", 3000),

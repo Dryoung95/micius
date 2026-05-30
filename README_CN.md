@@ -192,7 +192,9 @@ micius doctor
 | `/context budget` | 查看消息、上下文大小和 context ledger。 |
 | `/usb` | 扫描 USB 设备和串口。 |
 | `/serial monitor <port> [baud] [seconds]` | 限时读取串口输出。 |
+| `/pdf read <path> [pages]` | 从 PDF 手册、数据手册或论文中提取文字。 |
 | `/deps install platformio` | 安装允许列表中的本地依赖。 |
+| `/deps install pypdf` | 安装可选 PDF 解析依赖。 |
 | `/pio devices` | 列出 PlatformIO 可见设备。 |
 | `/pio build <project>` | 编译 PlatformIO 工程。 |
 | `/pio upload <project> <port>` | 使用 PlatformIO 上传固件。 |
@@ -305,6 +307,7 @@ Micius-Agent 会把高风险操作放在显式工具边界之后：
 - API key 存在本地配置或环境变量中，并被 git 忽略。
 - 本地文件工具默认只访问自管理允许列表。只有明确需要 Micius 检查或编辑项目外文件时，才使用 `/permissions all-files on`。
 - 依赖安装使用允许列表。
+- PDF 读取沿用同一套本地文件权限模型，并通过 `pypdf` 提取有限长度文本。
 - PlatformIO 操作限制在带 `platformio.ini` 的工程目录中。
 - 串口监视有读取时长和字节数限制。
 - DeviceResearch 先记录证据，再声明硬件任务成功。

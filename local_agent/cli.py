@@ -114,6 +114,7 @@ COMMAND_DESCRIPTIONS = {
     "/deps [check|install] <name>": "Check or install allowlisted local dependencies.",
     "/pio [check|devices|build|upload|clean] [project] [port]": "Run controlled PlatformIO operations.",
     "/web <query>": "Search the public web and return titles, snippets, and URLs.",
+    "/pdf read <path> [pages]": "Extract text from a PDF using the local Micius file permissions.",
     "/tools": "Print raw tool schemas.",
     "/tool call <name> <json-object>": "Call one raw device or self-management tool for debugging.",
     "/config [show|path]": "Inspect the loaded config path or redacted config.",
@@ -232,6 +233,7 @@ COMMAND_GROUPS = [
             "/deps [check|install] <name>",
             "/pio [check|devices|build|upload|clean] [project] [port]",
             "/web <query>",
+            "/pdf read <path> [pages]",
             "/tools",
             "/tool call <name> <json-object>",
             "/config [show|path]",
@@ -618,6 +620,9 @@ def _handle_command(line: str, config: Dict[str, Any], config_path: Path, agent:
     if command in {"/web", "/search"}:
         _handle_web_command(line, agent)
         return False
+    if command in {"/pdf", "/manual"}:
+        _handle_pdf_command(line, agent)
+        return False
     if command == "/tool":
         _handle_tool_command(line, agent)
         return False
@@ -743,6 +748,7 @@ def _handle_dependency_command(line: str, agent: LocalAgent) -> None:
         print("/deps check esptool")
         print("/deps install esptool")
         print("/deps install platformio")
+        print("/deps install pypdf")
         return
     operation = "check"
     dependency = parts[1]
@@ -800,6 +806,32 @@ def _handle_web_command(line: str, agent: LocalAgent) -> None:
         )
     except Exception as exc:
         print(f"web search error: {type(exc).__name__}: {exc}", file=sys.stderr)
+
+
+def _handle_pdf_command(line: str, agent: LocalAgent) -> None:
+    try:
+        parts = [part.strip("\"'") for part in shlex.split(line, posix=False)]
+    except ValueError as exc:
+        print(f"pdf parse error: {exc}", file=sys.stderr)
+        return
+    if len(parts) < 2 or parts[1].lower() in {"help", "-h", "--help"}:
+        print('/pdf read "S:\\qrs\\CH32H417RM.PDF" 1-3')
+        print('/pdf "board_knowledge/manuals/example.pdf" 1,4-6 20000')
+        return
+    action = parts[1].lower()
+    offset = 2 if action in {"read", "extract"} else 1
+    if len(parts) <= offset:
+        print("usage: /pdf read <path> [pages] [max_chars]", file=sys.stderr)
+        return
+    args: Dict[str, Any] = {"path": parts[offset]}
+    if len(parts) > offset + 1:
+        args["pages"] = parts[offset + 1]
+    if len(parts) > offset + 2:
+        args["max_chars"] = int(parts[offset + 2])
+    try:
+        print(json.dumps(agent.call_tool("micius_pdf_read", args), ensure_ascii=False, indent=2))
+    except Exception as exc:
+        print(f"pdf read error: {type(exc).__name__}: {exc}", file=sys.stderr)
 
 
 def _handle_research_command(line: str, agent: LocalAgent) -> None:
@@ -1538,7 +1570,7 @@ def _home_summary_lines(
         _toolset_line("device", _available_names(tool_names, ["get_device_status", "list_device_resources", "read_device_resource"])),
         _toolset_line("perception", _available_names(tool_names, ["capture_camera_frame", "/camera describe"])),
         _toolset_line("scripts", _available_names(tool_names, ["write_dsl_script", "run_dsl_script", "validate_dsl_script"])),
-        _toolset_line("self", _available_names(tool_names, ["micius_connection_check", "micius_usb_scan", "micius_serial_monitor", "micius_platformio", "micius_diagnostic_report"])),
+        _toolset_line("self", _available_names(tool_names, ["micius_connection_check", "micius_usb_scan", "micius_serial_monitor", "micius_pdf_read", "micius_platformio", "micius_diagnostic_report"])),
         "",
         f"{_accent('Available Skills')}",
         _skillset_line("boards", getattr(agent.board_knowledge, "active_boards", [])),

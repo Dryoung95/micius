@@ -192,7 +192,9 @@ Replace `COM6` with the port shown by `/usb` or `/pio devices`.
 | `/context budget` | Inspect message/context sizes and the context ledger. |
 | `/usb` | Scan USB devices and serial ports. |
 | `/serial monitor <port> [baud] [seconds]` | Read bounded serial output. |
+| `/pdf read <path> [pages]` | Extract text from a PDF manual, datasheet, or paper. |
 | `/deps install platformio` | Install an allowlisted local dependency. |
+| `/deps install pypdf` | Install the optional PDF extraction dependency. |
 | `/pio devices` | List PlatformIO-visible devices. |
 | `/pio build <project>` | Build a PlatformIO project. |
 | `/pio upload <project> <port>` | Upload firmware with PlatformIO. |
@@ -305,6 +307,7 @@ Micius-Agent keeps risky operations behind explicit tools:
 - API keys live in local config or environment variables and are ignored by git.
 - Local file tools default to a self-management allowlist. Use `/permissions all-files on` only when you intentionally want Micius to inspect or edit files outside the project.
 - Dependency installation is allowlisted.
+- PDF reading uses the same local file permission model and extracts bounded text through `pypdf`.
 - PlatformIO operations are restricted to project directories with `platformio.ini`.
 - Serial monitoring is bounded by duration and byte limits.
 - DeviceResearch records evidence before claiming hardware success.

@@ -107,6 +107,7 @@ class LocalAgent:
                     "Use micius_platformio to install/check PlatformIO and build or upload embedded firmware inside allowed project directories. "
                     "Use micius_device_research to turn hardware bring-up into a structured task with trace evidence and reusable skill curation. "
                     "Use micius_web_search for current public documentation, hardware references, release notes, or recent facts, and cite URLs from search results. "
+                    "Use micius_pdf_read to extract text from allowed PDF manuals, datasheets, and papers before summarizing their contents. "
                     "Use micius_diagnostic_report when the user wants a feedback report, issue report, or open-source support bundle. "
                     "Format answers for a terminal Markdown renderer: use short paragraphs and bullets, use fenced code blocks only for commands, code, or file lists. "
                     "Use local file/config tools only inside their allowlist, keep edits scoped, and mention when a restart is needed."

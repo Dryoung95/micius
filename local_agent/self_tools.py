@@ -33,6 +33,7 @@ SELF_TOOL_NAMES = {
     "micius_config_update",
     "micius_file_list",
     "micius_file_read",
+    "micius_pdf_read",
     "micius_file_write",
     "micius_file_replace",
     "micius_run_check",
@@ -134,7 +135,7 @@ def self_tool_schemas() -> List[Dict[str, Any]]:
                     "properties": {
                         "dependency": {
                             "type": "string",
-                            "description": "Dependency key. Currently supported: esptool, pyserial, platformio.",
+                            "description": "Dependency key. Currently supported: esptool, pyserial, platformio, pypdf.",
                         },
                         "operation": {
                             "type": "string",
@@ -385,6 +386,33 @@ def self_tool_schemas() -> List[Dict[str, Any]]:
         {
             "type": "function",
             "function": {
+                "name": "micius_pdf_read",
+                "description": (
+                    "Extract text from a PDF inside an allowed Micius file area. "
+                    "Use this for board manuals, datasheets, papers, and hardware reference PDFs."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "path": {"type": "string", "description": "Path to a .pdf file."},
+                        "pages": {
+                            "type": "string",
+                            "description": "Optional 1-based page selector such as 1, 1-3, or 1,4-6. Default reads from page 1 until max_chars is reached.",
+                        },
+                        "max_chars": {
+                            "type": "integer",
+                            "description": "Maximum extracted characters to return. Default 12000, max 60000.",
+                        },
+                        "redact_secrets": {"type": "boolean", "description": "Redact API keys and secret-like values. Default true."},
+                        "install_if_missing": {"type": "boolean", "description": "Install pypdf automatically if missing. Default true."},
+                    },
+                    "required": ["path"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": "micius_file_write",
                 "description": "Write a text file in an allowed Micius project area. Existing files are backed up by default.",
                 "parameters": {
@@ -489,6 +517,8 @@ class LocalSelfTools:
             return self._file_list(args)
         if name == "micius_file_read":
             return self._file_read(args)
+        if name == "micius_pdf_read":
+            return self._pdf_read(args)
         if name == "micius_file_write":
             return self._file_write(args)
         if name == "micius_file_replace":
@@ -664,6 +694,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
         allowed = {
             "esptool": {"packages": ["esptool"], "modules": ["esptool"]},
             "platformio": {"packages": ["platformio"], "modules": ["platformio"]},
+            "pypdf": {"packages": ["pypdf"], "modules": ["pypdf"]},
             "pyserial": {"packages": ["pyserial"], "modules": ["serial"]},
         }
         if dependency not in allowed:
@@ -952,7 +983,7 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             "self_status": self._self_status(),
             "dependencies": {
                 name: self._dependency_install({"dependency": name, "operation": "check"})
-                for name in ("esptool", "pyserial", "platformio")
+                for name in ("esptool", "pyserial", "platformio", "pypdf")
             },
         }
         if include_usb:
@@ -1203,6 +1234,84 @@ $controllers = Get-CimInstance Win32_USBController | Select-Object Name,DeviceID
             "truncated": truncated,
         }
 
+    def _pdf_read(self, args: Dict[str, Any]) -> Dict[str, Any]:
+        path = self._resolve_path(str(args.get("path") or ""))
+        if not path.exists():
+            raise FileNotFoundError(str(path))
+        if not path.is_file():
+            raise ValueError("path must be a PDF file")
+        if path.suffix.lower() != ".pdf":
+            raise ValueError("path must end with .pdf")
+        max_chars = max(1, min(int(args.get("max_chars") or 12000), 60000))
+        pages_arg = _short_text(args.get("pages") or "", 160).strip()
+        install = None
+        reader_cls = self._pdf_reader_class()
+        if reader_cls is None:
+            if not bool(args.get("install_if_missing", True)):
+                raise RuntimeError("pypdf is missing")
+            install = self._dependency_install({"dependency": "pypdf", "operation": "install", "timeout_sec": 180})
+            if install.get("status") != "installed":
+                return {"status": "failed", "reason": "pypdf installation failed", "install": install}
+            reader_cls = self._pdf_reader_class()
+        if reader_cls is None:
+            raise RuntimeError("no supported PDF reader is available")
+        reader = reader_cls(str(path))
+        page_count = len(reader.pages)
+        page_numbers = _parse_page_selector(pages_arg, page_count) if pages_arg else list(range(page_count))
+        chunks: List[str] = []
+        extracted_pages: List[int] = []
+        total_chars = 0
+        truncated = False
+        for page_index in page_numbers:
+            page_text = reader.pages[page_index].extract_text() or ""
+            page_text = page_text.replace("\r\n", "\n").replace("\r", "\n").strip()
+            if not page_text:
+                extracted_pages.append(page_index + 1)
+                continue
+            page_header = f"\n\n[page {page_index + 1}]\n"
+            remaining = max_chars - total_chars
+            next_text = page_header + page_text
+            if len(next_text) > remaining:
+                chunks.append(next_text[:remaining])
+                total_chars = max_chars
+                truncated = True
+                extracted_pages.append(page_index + 1)
+                break
+            chunks.append(next_text)
+            total_chars += len(next_text)
+            extracted_pages.append(page_index + 1)
+            if total_chars >= max_chars:
+                truncated = True
+                break
+        text = "".join(chunks).strip()
+        if bool(args.get("redact_secrets", True)):
+            text = _redact_text(text)
+        return {
+            "status": "ok",
+            "path": self._display_path(path),
+            "page_count": page_count,
+            "requested_pages": pages_arg or "all",
+            "extracted_pages": extracted_pages,
+            "content": text,
+            "chars": len(text),
+            "truncated": truncated or len(page_numbers) > len(extracted_pages),
+            "install": install,
+        }
+
+    def _pdf_reader_class(self) -> Any:
+        try:
+            from pypdf import PdfReader
+
+            return PdfReader
+        except ImportError:
+            pass
+        try:
+            from PyPDF2 import PdfReader
+
+            return PdfReader
+        except ImportError:
+            return None
+
     def _file_write(self, args: Dict[str, Any]) -> Dict[str, Any]:
         path = self._resolve_path(str(args.get("path") or ""))
         content = str(args.get("content") or "")
@@ -1407,6 +1516,35 @@ def _short_text(value: Any, max_len: int) -> str:
     if len(text) > max_len:
         raise ValueError(f"text exceeds {max_len} characters")
     return text
+
+
+def _parse_page_selector(selector: str, page_count: int) -> List[int]:
+    if page_count <= 0:
+        return []
+    pages: List[int] = []
+    seen = set()
+    for token in selector.replace(" ", "").split(","):
+        if not token:
+            continue
+        if "-" in token:
+            start_raw, end_raw = token.split("-", 1)
+            if not start_raw or not end_raw:
+                raise ValueError("invalid pages selector")
+            start = int(start_raw)
+            end = int(end_raw)
+            if start > end:
+                raise ValueError("invalid descending pages range")
+            candidates = range(start, end + 1)
+        else:
+            candidates = [int(token)]
+        for page in candidates:
+            if page < 1 or page > page_count:
+                raise ValueError(f"page out of range: {page} (PDF has {page_count} pages)")
+            index = page - 1
+            if index not in seen:
+                seen.add(index)
+                pages.append(index)
+    return pages
 
 
 def _redact(value: Any) -> Any:
