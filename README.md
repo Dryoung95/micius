@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/micius-slime.svg" width="220" alt="Micius blue slime terminal mascot">
+  <img src="brand/micius-slime-logo.png" width="220" alt="Micius blue slime terminal mascot">
 </p>
 
 <h1 align="center">Micius-Agent</h1>

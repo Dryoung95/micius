@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="brand/micius-slime.svg" width="220" alt="Micius 蓝色史莱姆终端形象">
+  <img src="brand/micius-slime-logo.png" width="220" alt="Micius 蓝色史莱姆终端形象">
 </p>
 
 <h1 align="center">Micius-Agent</h1>
