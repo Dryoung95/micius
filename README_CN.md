@@ -1,18 +1,39 @@
-# Micius-Agent
+<p align="center">
+  <img src="brand/micius-slime.svg" width="220" alt="Micius 蓝色史莱姆终端形象">
+</p>
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-prototype-orange.svg)](#项目状态)
+<h1 align="center">Micius-Agent</h1>
 
-语言：[English](README.md) | 中文
+<p align="center">
+  <strong>一个面向真实硬件的终端优先嵌入式 Agent 工作台。</strong>
+</p>
 
-**一个终端优先的嵌入式 Agent，让大模型能够感知、记忆并操作真实硬件。**
+<p align="center">
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-2563EB.svg"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-0EA5E9.svg"></a>
+  <a href="#项目状态"><img alt="Status" src="https://img.shields.io/badge/status-prototype-F59E0B.svg"></a>
+  <a href="#60-秒快速体验"><img alt="Quickstart" src="https://img.shields.io/badge/quickstart-60s-38BDF8.svg"></a>
+</p>
 
-Micius-Agent 是一个面向嵌入式开发的终端 Agent 工作台。它支持 OpenAI 兼容 API 和原生 Anthropic Claude，并连接本地开发工具、串口设备、摄像头、ESP32 类开发板、Linux 边缘板和轻量级设备节点。
+<p align="center">
+  <a href="README.md">English</a>
+  ·
+  <a href="#架构">架构</a>
+  ·
+  <a href="#核心命令">命令</a>
+  ·
+  <a href="#社区与反馈">反馈</a>
+</p>
+
+Micius-Agent 是一个面向嵌入式开发的终端 Agent 工作台。它把主 Agent 保留在本地电脑上，通过受控工具、本地设备信号、PDF 手册和轻量设备节点连接真实硬件。
+
+它支持 OpenAI 兼容 API、原生 Anthropic Claude、串口设备、摄像头、ESP32 类开发板、Linux 边缘板和轻量级设备节点，目标是让大模型能够**感知**、**记忆**并**操作**真实嵌入式系统。
 
 **Micius** 对应中文里的 **墨子**。墨子与逻辑、工程、光学和实践技艺相关，这也对应本项目希望把大模型能力连接到真实硬件和工程实践中的方向。
 
-Micius-Agent 的设计思路是把主 Agent 保留在本地电脑上，再让连接的硬件通过受控工具和轻量设备节点暴露能力。这样即使开发板本身无法运行完整 coding agent，也可以参与到 Agent 工作流中。
+| 本地大脑 | 硬件神经 | 可成长技能 |
+|---|---|---|
+| 主 Agent 留在电脑上，通过 API URL、key 和模型名灵活配置。 | 通过 USB、串口、PlatformIO、PDF 手册、摄像头和设备节点触达开发板。 | 把板卡 profile、端口映射、调试尝试和成功命令沉淀成可复用硬件流程。 |
 
 ## 60 秒快速体验
 

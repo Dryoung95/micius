@@ -1,18 +1,39 @@
-# Micius-Agent
+<p align="center">
+  <img src="brand/micius-slime.svg" width="220" alt="Micius blue slime terminal mascot">
+</p>
 
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-prototype-orange.svg)](#status)
+<h1 align="center">Micius-Agent</h1>
 
-Language: English | [中文](README_CN.md)
+<p align="center">
+  <strong>A terminal-first embedded agent workbench for real devices.</strong>
+</p>
 
-**A terminal-first embedded agent that lets LLMs see, remember, and operate real-world devices.**
+<p align="center">
+  <a href="LICENSE"><img alt="License: Apache-2.0" src="https://img.shields.io/badge/License-Apache--2.0-2563EB.svg"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-0EA5E9.svg"></a>
+  <a href="#status"><img alt="Status" src="https://img.shields.io/badge/status-prototype-F59E0B.svg"></a>
+  <a href="#try-it-in-60-seconds"><img alt="Quickstart" src="https://img.shields.io/badge/quickstart-60s-38BDF8.svg"></a>
+</p>
 
-Terminal-first embedded agent workbench for OpenAI-compatible APIs, native Anthropic Claude, local development tools, serial devices, cameras, ESP32-class boards, and Linux-capable edge nodes.
+<p align="center">
+  <a href="README_CN.md">中文</a>
+  ·
+  <a href="#architecture">Architecture</a>
+  ·
+  <a href="#core-commands">Commands</a>
+  ·
+  <a href="#community-and-feedback">Feedback</a>
+</p>
+
+Micius-Agent keeps the main agent on your computer and exposes connected hardware through controlled tools, local device signals, PDF manuals, and lightweight device nodes. It is built for OpenAI-compatible APIs, native Anthropic Claude, serial devices, cameras, ESP32-class boards, and Linux-capable edge nodes.
+
+It is designed to help an LLM **see**, **remember**, and **operate** real-world embedded systems without requiring every development board to run a full coding agent locally.
 
 The name **Micius** refers to **Mozi (墨子)**, the ancient Chinese thinker whose work is associated with logic, engineering, optics, and practical craftsmanship.
 
-Micius-Agent keeps the main agent on your computer and exposes connected hardware through controlled tools and lightweight device nodes. This makes it useful for development boards that cannot run a full coding agent locally.
+| Local brain | Hardware nerves | Growing skills |
+|---|---|---|
+| Keep the agent on your computer and configure models by API URL, key, and model name. | Reach boards through USB, serial, PlatformIO, PDF manuals, cameras, and device nodes. | Turn board profiles, port maps, attempts, and working commands into reusable embedded workflows. |
 
 ## Try It In 60 Seconds
 
