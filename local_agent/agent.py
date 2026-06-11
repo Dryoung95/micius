@@ -57,7 +57,7 @@ class LocalAgent:
             timeout_sec=float(node_cfg.get("timeout_sec", 10)),
         )
         self.model = llm_cfg["model"]
-        self.max_steps = int(config.get("agent", {}).get("max_steps", 6))
+        self.max_steps = int(config.get("agent", {}).get("max_steps", 12))
         self.temperature = float(llm_cfg.get("temperature", 0.2))
         self.max_tokens = config.get("agent", {}).get("max_tokens", llm_cfg.get("max_tokens"))
         self.system_prompt = config.get("agent", {}).get("system_prompt", DEFAULT_SYSTEM_PROMPT)
@@ -694,7 +694,7 @@ class LocalAgent:
             self.temperature = float(llm_cfg.get("temperature", 0.2))
             self.max_tokens = self.config.get("agent", {}).get("max_tokens", llm_cfg.get("max_tokens"))
         if "agent" in changed:
-            self.max_steps = int(self.config.get("agent", {}).get("max_steps", 6))
+            self.max_steps = int(self.config.get("agent", {}).get("max_steps", 12))
             self.max_tokens = self.config.get("agent", {}).get("max_tokens", self.config.get("llm", {}).get("max_tokens"))
             self.system_prompt = self.config.get("agent", {}).get("system_prompt", DEFAULT_SYSTEM_PROMPT)
         if "atlas" in changed or "device_node" in changed:
