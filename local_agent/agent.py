@@ -159,6 +159,7 @@ class LocalAgent:
         self.memory.log_event("user.prompt", user_prompt, {"session_id": self.session_id})
         turn_start = len(self.messages)
         tool_activity = False
+        deferred_execution_retry = False
         execution_guidance = self._execution_intent_guidance(user_prompt)
         if execution_guidance:
             self.messages.append({"role": "system", "content": execution_guidance})
@@ -198,6 +199,20 @@ class LocalAgent:
             content = message.get("content")
             if content is None:
                 content = ""
+            if execution_guidance and not deferred_execution_retry and self._deferred_execution_detected(str(content)):
+                deferred_execution_retry = True
+                self.messages.append({"role": "assistant", "content": content})
+                self.messages.append(
+                    {
+                        "role": "system",
+                        "content": (
+                            "The previous answer stopped at preparation even though the user requested firmware execution. "
+                            "Continue now by calling the controlled build/upload tools if the target project and port are known. "
+                            "Only ask the user if a required target is ambiguous or a tool has failed."
+                        ),
+                    }
+                )
+                continue
             self.messages.append({"role": "assistant", "content": content})
             self.memory.log_event("assistant.response", str(content), {"session_id": self.session_id})
             self._emit_status("final", "answer ready")
@@ -206,9 +221,18 @@ class LocalAgent:
 
     def _execution_intent_guidance(self, user_prompt: str) -> str:
         text = user_prompt.lower()
-        execution_keywords = (
-            "\u70e7\u5f55",
-            "\u5237\u5199",
+        execution_phrases = (
+            "\u7ed9\u6211\u70e7\u5f55",
+            "\u5e2e\u6211\u70e7\u5f55",
+            "\u8bf7\u70e7\u5f55",
+            "\u73b0\u5728\u70e7\u5f55",
+            "\u5f00\u59cb\u70e7\u5f55",
+            "\u8fdb\u884c\u70e7\u5f55",
+            "\u70e7\u5f55\u4e00\u4e2a",
+            "\u70e7\u5f55\u7a7a\u7a0b\u5e8f",
+            "\u7ed9\u6211\u5237\u5199",
+            "\u5e2e\u6211\u5237\u5199",
+            "\u8bf7\u5237\u5199",
             "\u4e0a\u4f20\u56fa\u4ef6",
             "\u5199\u5165\u56fa\u4ef6",
             "\u56fa\u4ef6\u4e0a\u4f20",
@@ -217,10 +241,11 @@ class LocalAgent:
             "flash",
             "burn",
             "upload firmware",
+            "upload to board",
             "program board",
             "deploy firmware",
         )
-        if not any(keyword in text for keyword in execution_keywords):
+        if not any(phrase in text for phrase in execution_phrases):
             return ""
         return (
             "Current turn policy: the user has explicitly requested firmware execution. "
@@ -231,6 +256,30 @@ class LocalAgent:
             "Only stop for user input if the target board/port/project cannot be inferred, the tool fails, or the requested action is outside the allowed tools. "
             "Do not answer with only 'next steps' when the build/upload tool can be called."
         )
+
+    def _deferred_execution_detected(self, content: str) -> bool:
+        text = content.lower()
+        defer_markers = (
+            "\u672a\u6267\u884c",
+            "\u8fd8\u5dee",
+            "\u540e\u7eed\u64cd\u4f5c",
+            "\u9700\u8981\u4f60",
+            "\u8bf7\u4f60",
+            "not executed",
+            "next steps",
+            "please run",
+        )
+        execution_terms = (
+            "\u7f16\u8bd1",
+            "\u4e0a\u4f20",
+            "\u70e7\u5f55",
+            "\u5237\u5199",
+            "platformio",
+            "pio run",
+            "upload",
+            "flash",
+        )
+        return any(marker in text for marker in defer_markers) and any(term in text for term in execution_terms)
 
     def _fallback_after_llm_error(self, exc: Exception, turn_start: int) -> str:
         self._emit_status("final", "answer ready")
