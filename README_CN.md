@@ -236,6 +236,7 @@ Provider 示例位于 `configs/providers/`：
 | `openai-compatible.example.json` | OpenAI 兼容的 `/v1/chat/completions` 网关。 |
 | `anthropic-claude.example.json` | 原生 Anthropic Claude `/v1/messages` API。 |
 | `deepseek-compatible.example.json` | DeepSeek 的 OpenAI 兼容 API。 |
+| `xiaomi-mimo-compatible.example.json` | 小米 MiMo 的 OpenAI 兼容 API。 |
 
 可以把需要的 `llm` 片段复制到 `configs/local_agent.json`，也可以直接运行 `micius --setup`。
 

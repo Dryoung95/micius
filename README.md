@@ -236,6 +236,7 @@ Provider snippets live in `configs/providers/`:
 | `openai-compatible.example.json` | OpenAI-compatible `/v1/chat/completions` gateways. |
 | `anthropic-claude.example.json` | Native Anthropic Claude `/v1/messages` API. |
 | `deepseek-compatible.example.json` | DeepSeek's OpenAI-compatible API. |
+| `xiaomi-mimo-compatible.example.json` | Xiaomi MiMo's OpenAI-compatible API. |
 
 Copy the `llm` section you need into `configs/local_agent.json`, or run `micius --setup`.
 
