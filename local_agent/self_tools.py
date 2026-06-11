@@ -156,7 +156,9 @@ def self_tool_schemas() -> List[Dict[str, Any]]:
                 "name": "micius_platformio",
                 "description": (
                     "Run allowlisted PlatformIO operations on an embedded project inside Micius allowed project areas. "
-                    "Can check PlatformIO, build firmware, upload firmware, clean builds, or list serial devices."
+                    "Can check PlatformIO, build firmware, upload firmware, clean builds, or list serial devices. "
+                    "When the user explicitly asks to flash/burn/upload firmware, use operation=upload after the project is ready; "
+                    "PlatformIO upload performs a build first when needed, so do not stop after only preparing files."
                 ),
                 "parameters": {
                     "type": "object",

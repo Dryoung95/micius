@@ -29,7 +29,10 @@ DEFAULT_SYSTEM_PROMPT = (
     "and choose safe actions. Treat the connected device node as an MCP-like embedded capability server: "
     "read resources before assuming hardware state, call controlled tools for actions, and use "
     "write_dsl_script/run_dsl_script for reusable behavior. Answer in concise Chinese. "
-    "Do not invent tool results; if you need device data, call tools."
+    "Do not invent tool results; if you need device data, call tools. "
+    "When the user explicitly asks to build, flash, burn, upload, or deploy firmware, treat that wording as consent "
+    "to run the controlled build/upload tools in the same turn after the target board, project, and port are known. "
+    "Do not stop after preparing files and ask the user to repeat the same action."
 )
 
 
@@ -104,7 +107,8 @@ class LocalAgent:
                     "Use micius_connection_check when the user asks whether devices are connected or how to bring up a device node. "
                     "Use micius_serial_monitor to read bounded local serial logs after flashing firmware or diagnosing a board. "
                     "Use micius_dependency_install to check or install allowlisted local dependencies such as esptool. "
-                    "Use micius_platformio to install/check PlatformIO and build or upload embedded firmware inside allowed project directories. "
+                    "Use micius_platformio to install/check PlatformIO and build or upload embedded firmware inside allowed project directories; "
+                    "if the user explicitly asks to flash/burn/upload firmware, continue to operation=upload in the same turn after the project and port are known. "
                     "Use micius_device_research to turn hardware bring-up into a structured task with trace evidence and reusable skill curation. "
                     "Use micius_web_search for current public documentation, hardware references, release notes, or recent facts, and cite URLs from search results. "
                     "Use micius_pdf_read to extract text from allowed PDF manuals, datasheets, and papers before summarizing their contents. "
@@ -155,6 +159,9 @@ class LocalAgent:
         self.memory.log_event("user.prompt", user_prompt, {"session_id": self.session_id})
         turn_start = len(self.messages)
         tool_activity = False
+        execution_guidance = self._execution_intent_guidance(user_prompt)
+        if execution_guidance:
+            self.messages.append({"role": "system", "content": execution_guidance})
         self.messages.append({"role": "user", "content": user_prompt})
         for step in range(self.max_steps):
             self._emit_status("thinking", f"step {step + 1}/{self.max_steps}")
@@ -196,6 +203,34 @@ class LocalAgent:
             self._emit_status("final", "answer ready")
             return str(content)
         return self._finalize_after_max_steps()
+
+    def _execution_intent_guidance(self, user_prompt: str) -> str:
+        text = user_prompt.lower()
+        execution_keywords = (
+            "\u70e7\u5f55",
+            "\u5237\u5199",
+            "\u4e0a\u4f20\u56fa\u4ef6",
+            "\u5199\u5165\u56fa\u4ef6",
+            "\u56fa\u4ef6\u4e0a\u4f20",
+            "\u4e0b\u8f7d\u7a0b\u5e8f",
+            "\u4e0b\u8f7d\u5230\u677f\u5b50",
+            "flash",
+            "burn",
+            "upload firmware",
+            "program board",
+            "deploy firmware",
+        )
+        if not any(keyword in text for keyword in execution_keywords):
+            return ""
+        return (
+            "Current turn policy: the user has explicitly requested firmware execution. "
+            "For supported embedded workflows, proceed through the controlled tool chain in this same turn: "
+            "identify or confirm the serial port/project, create or update the requested source files, then build and upload/flash. "
+            "For ESP32/ESP32-S3 PlatformIO projects, use micius_platformio with operation=upload after the project is ready; "
+            "PlatformIO upload performs the build step when needed. "
+            "Only stop for user input if the target board/port/project cannot be inferred, the tool fails, or the requested action is outside the allowed tools. "
+            "Do not answer with only 'next steps' when the build/upload tool can be called."
+        )
 
     def _fallback_after_llm_error(self, exc: Exception, turn_start: int) -> str:
         self._emit_status("final", "answer ready")
