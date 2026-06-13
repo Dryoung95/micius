@@ -113,6 +113,7 @@ class LocalAgent:
                     "Use micius_web_search for current public documentation, hardware references, release notes, or recent facts, and cite URLs from search results. "
                     "Use micius_pdf_read to extract text from allowed PDF manuals, datasheets, and papers before summarizing their contents. "
                     "Use micius_diagnostic_report when the user wants a feedback report, issue report, or open-source support bundle. "
+                    "A configured remote embedded device node is optional; do not report it as a failure during local USB/serial/ESP32 workflows unless the user asks about remote device-node features. "
                     "Format answers for a terminal Markdown renderer: use short paragraphs and bullets, use fenced code blocks only for commands, code, or file lists. "
                     "Use local file/config tools only inside their allowlist, keep edits scoped, and mention when a restart is needed."
                 ),
@@ -459,7 +460,18 @@ class LocalAgent:
         tool_names = {tool["function"]["name"] for tool in self.remote_tools if "function" in tool}
         context: Dict[str, Any] = {}
         if self.remote_error:
-            return json.dumps({"status": "unavailable", "error": self.remote_error}, ensure_ascii=False)
+            return json.dumps(
+                {
+                    "status": "optional_remote_node_offline",
+                    "note": (
+                        "No remote Linux/Atlas-style device node is online. This is normal for local USB, serial, "
+                        "PlatformIO, ESP32, and MCU workflows. Do not mention it as a problem unless the user asks "
+                        "about remote device-node, camera-on-node, or networked board features."
+                    ),
+                    "diagnostic_tool": "micius_connection_check",
+                },
+                ensure_ascii=False,
+            )
         if "get_capability_manifest" not in tool_names:
             return "{}"
         try:

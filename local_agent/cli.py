@@ -396,7 +396,7 @@ def _print_banner(config: Dict[str, Any], agent: LocalAgent, device_process: Opt
     if device_process is not None:
         status_items.append(("node", "auto-started local tool server"))
     if getattr(agent, "remote_error", None):
-        status_items.append(("remote", "device node unavailable; local self-management only"))
+        status_items.append(("mode", "local USB/serial mode; remote node optional/offline"))
     capabilities = [
         ("self", "micius_self_status" in tool_names),
         ("resources", "list_device_resources" in tool_names and "read_device_resource" in tool_names),
@@ -441,8 +441,8 @@ def _print_banner_warnings(agent: LocalAgent, tool_names: set[str]) -> None:
         print(_warning("connected device node lacks persistent manifest tools; restart the remote tool server to use growth memory"))
     if "list_device_resources" not in tool_names and not getattr(agent, "remote_error", None):
         print(_warning("connected device node lacks embedded resource tools; restart the remote tool server to use MCP-like resources"))
-    if getattr(agent, "remote_error", None):
-        print(_warning(f"device node connection unavailable: {agent.remote_error}"))
+    if getattr(agent, "remote_error", None) and os.getenv("MICIUS_SHOW_REMOTE_WARNINGS"):
+        print(_muted(f"remote device node is optional and currently offline: {agent.remote_error}"))
 
 
 def _rich_terminal_home_enabled(width: int) -> bool:
@@ -1556,7 +1556,7 @@ def _home_summary_lines(
     node = str(status_map.get("node") or "")
     provider = str(status_map.get("provider") or config.get("llm", {}).get("provider", "openai"))
     model = str(status_map.get("model") or getattr(agent, "model", ""))
-    remote_state = "local mode" if getattr(agent, "remote_error", None) else "device node online"
+    remote_state = "local USB/serial mode" if getattr(agent, "remote_error", None) else "device node online"
     return [
         f"{_accent('Runtime')}",
         f"{_muted('provider:')} {_bold(provider)}",

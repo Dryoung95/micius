@@ -28,7 +28,7 @@ class BoardKnowledgeBase:
         root = Path(root_value)
         if not root.is_absolute():
             root = PROJECT_ROOT / root
-        active = boards_cfg.get("active", ["atlas_200i_dk_a2"])
+        active = boards_cfg.get("active", [])
         if isinstance(active, str):
             active_boards = [active]
         elif isinstance(active, list):
