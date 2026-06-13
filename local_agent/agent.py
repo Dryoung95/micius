@@ -24,7 +24,7 @@ from local_agent.self_tools import SELF_TOOL_NAMES, LocalSelfTools
 DEFAULT_SYSTEM_PROMPT = (
     "You are Micius, an embedded-agent bridge for physical devices. "
     "Your job is to coordinate general embedded device nodes through controlled tools, "
-    "including Linux-capable boards, Atlas-class edge boards, ESP32-class MCU nodes, sensors, and actuators. "
+    "including MCU boards, Linux-capable boards, edge-AI devices, robot controllers, sensors, and actuators. "
     "maintain persistent device capability memory, inspect sensors, write reusable restricted DSL scripts, "
     "and choose safe actions. Treat the connected device node as an MCP-like embedded capability server: "
     "read resources before assuming hardware state, call controlled tools for actions, and use "
@@ -32,7 +32,8 @@ DEFAULT_SYSTEM_PROMPT = (
     "Do not invent tool results; if you need device data, call tools. "
     "When the user explicitly asks to build, flash, burn, upload, or deploy firmware, treat that wording as consent "
     "to run the controlled build/upload tools in the same turn after the target board, project, and port are known. "
-    "Do not stop after preparing files and ask the user to repeat the same action."
+    "Do not stop after preparing files and ask the user to repeat the same action. "
+    "When describing Micius, present it as a general hardware, embedded, and robotics agent; mention Atlas or ESP32 only as validated examples."
 )
 
 
@@ -113,7 +114,8 @@ class LocalAgent:
                     "Use micius_web_search for current public documentation, hardware references, release notes, or recent facts, and cite URLs from search results. "
                     "Use micius_pdf_read to extract text from allowed PDF manuals, datasheets, and papers before summarizing their contents. "
                     "Use micius_diagnostic_report when the user wants a feedback report, issue report, or open-source support bundle. "
-                    "A configured remote embedded device node is optional; do not report it as a failure during local USB/serial/ESP32 workflows unless the user asks about remote device-node features. "
+                    "A configured remote embedded device node is optional; do not report it as a failure during local USB/serial/MCU workflows unless the user asks about remote device-node features. "
+                    "When summarizing capabilities, say generic MCU firmware workflows, local hardware tools, and device-node workflows first; mention ESP32 or Atlas only as examples already tested. "
                     "Format answers for a terminal Markdown renderer: use short paragraphs and bullets, use fenced code blocks only for commands, code, or file lists. "
                     "Use local file/config tools only inside their allowlist, keep edits scoped, and mention when a restart is needed."
                 ),
@@ -252,7 +254,7 @@ class LocalAgent:
             "Current turn policy: the user has explicitly requested firmware execution. "
             "For supported embedded workflows, proceed through the controlled tool chain in this same turn: "
             "identify or confirm the serial port/project, create or update the requested source files, then build and upload/flash. "
-            "For ESP32/ESP32-S3 PlatformIO projects, use micius_platformio with operation=upload after the project is ready; "
+            "For PlatformIO-backed MCU projects, use micius_platformio with operation=upload after the project is ready; "
             "PlatformIO upload performs the build step when needed. "
             "Only stop for user input if the target board/port/project cannot be inferred, the tool fails, or the requested action is outside the allowed tools. "
             "Do not answer with only 'next steps' when the build/upload tool can be called."
@@ -464,8 +466,8 @@ class LocalAgent:
                 {
                     "status": "optional_remote_node_offline",
                     "note": (
-                        "No remote Linux/Atlas-style device node is online. This is normal for local USB, serial, "
-                        "PlatformIO, ESP32, and MCU workflows. Do not mention it as a problem unless the user asks "
+                        "No remote Linux/edge-board device node is online. This is normal for local USB, serial, "
+                        "PlatformIO, and MCU workflows. Do not mention it as a problem unless the user asks "
                         "about remote device-node, camera-on-node, or networked board features."
                     ),
                     "diagnostic_tool": "micius_connection_check",

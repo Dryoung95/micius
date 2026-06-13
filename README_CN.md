@@ -25,15 +25,17 @@
   <a href="#社区与反馈">反馈</a>
 </p>
 
-Micius-Agent 是一个面向嵌入式开发的终端 Agent 工作台。它把主 Agent 保留在本地电脑上，通过受控工具、本地设备信号、PDF 手册和轻量设备节点连接真实硬件。
+Micius-Agent 是一个面向真实硬件、嵌入式设备和机器人开发的终端 Agent 工作台。它把主 Agent 保留在本地电脑上，通过受控工具、本地设备信号、PDF 手册和轻量设备节点连接真实硬件。
 
-它支持 OpenAI 兼容 API、原生 Anthropic Claude、串口设备、摄像头、ESP32 类开发板、Linux 边缘板和轻量级设备节点，目标是让大模型能够**感知**、**记忆**并**操作**真实嵌入式系统。
+它支持 OpenAI 兼容 API、原生 Anthropic Claude、串口设备、摄像头、MCU 开发板、Linux 边缘板、机器人控制器和轻量级设备节点，目标是让大模型能够**感知**、**记忆**并**操作**真实硬件系统。
+
+Atlas 类开发板和 ESP32/ESP32-S3 是当前已经进行实验和验证的对象，不是 Micius-Agent 的边界。
 
 **Micius** 对应中文里的 **墨子**。墨子与逻辑、工程、光学和实践技艺相关，这也对应本项目希望把大模型能力连接到真实硬件和工程实践中的方向。
 
 | 本地大脑 | 硬件神经 | 可成长技能 |
 |---|---|---|
-| 主 Agent 留在电脑上，通过 API URL、key 和模型名灵活配置。 | 通过 USB、串口、PlatformIO、PDF 手册、摄像头和设备节点触达开发板。 | 把板卡 profile、端口映射、调试尝试和成功命令沉淀成可复用硬件流程。 |
+| 主 Agent 留在电脑上，通过 API URL、key 和模型名灵活配置。 | 通过 USB、串口、PlatformIO 兼容工具链、PDF 手册、摄像头、传感器和设备节点触达硬件。 | 把板卡 profile、端口映射、调试尝试和成功命令沉淀成可复用硬件流程。 |
 
 ## 60 秒快速体验
 
@@ -81,17 +83,18 @@ flowchart LR
   CLI --> LocalTools["USB / 串口 / PlatformIO"]
   CLI --> Memory["板卡知识 / Skills / 设备记忆"]
   CLI --> Node["Micius 设备节点"]
-  Node --> Hardware["传感器 / 摄像头 / 执行器 / 开发板"]
+  Node --> Hardware["MCU / Linux 板 / 传感器 / 摄像头 / 执行器 / 机器人"]
 ```
 
 ## 核心特性
 
 - **灵活模型配置**：支持 OpenAI 兼容 API，也支持原生 Anthropic Claude Messages API。
 - **终端优先体验**：通过 `micius` 启动，可以使用自然语言或斜杠命令。
-- **本地硬件工具**：支持 USB 扫描、串口监视、受限依赖安装、PlatformIO 编译和上传。
-- **设备节点桥接**：Linux 类开发板可以通过轻量 JSONL TCP 工具服务器接入。
+- **本地硬件工具**：支持 USB 扫描、串口监视、受限依赖安装、PlatformIO 及其他工具链工作流。
+- **设备节点桥接**：Linux 类开发板、边缘设备和机器人控制器可以通过轻量 JSONL TCP 工具服务器接入。
 - **DeviceResearch 轨迹**：把硬件调试任务记录为 `task.json`、`plan.md` 和 `trace.jsonl`。
 - **持久化技能和板卡知识**：保存可复用工作流、端口映射、手册摘要和设备经验。
+- **通用硬件定位**：Atlas 和 ESP32 是验证样例，新的硬件通过 profile、工具和 skill 扩展。
 - **上下文感知 Agent Loop**：压缩大型工具结果、保存 artifact，并暴露估算 token/cost 信息。
 - **保守工具边界**：默认不开放无限制 shell 执行。
 
@@ -102,10 +105,11 @@ Micius-Agent 目前仍是早期原型。API、命令名、文件结构和硬件�
 当前重点：
 
 - 本地 CLI 体验
-- ESP32 与 PlatformIO 工作流
-- Linux 嵌入式设备节点
+- 通用 MCU 固件工作流
+- Linux 嵌入式设备节点、边缘设备和机器人控制器
 - 板卡知识和技能沉淀
 - 可追踪的硬件接入流程
+- 已在 ESP32/ESP32-S3 与 Atlas 类边缘硬件上进行实验和验证
 
 ## 安装
 
@@ -114,7 +118,7 @@ Micius-Agent 目前仍是早期原型。API、命令名、文件结构和硬件�
 - Python 3.10+
 - 支持 UTF-8 的终端
 - OpenAI 兼容 API endpoint，或 Anthropic Claude API key
-- ESP32 工作流可选依赖：`pyserial`、`esptool`、`platformio`
+- MCU 工作流可选依赖：`pyserial`、`platformio`，以及 `esptool` 等厂商烧录工具
 
 ```bash
 git clone https://github.com/Dryoung95/micius.git
@@ -256,13 +260,15 @@ Micius 为长时间硬件会话维护了一个轻量 context ledger：
 DeviceResearch 会把硬件接入过程变成可恢复的工作流：
 
 ```text
-/research new bring up an ESP32 board and verify serial output
+/research new bring up a serial-connected MCU board and verify firmware output
 /research scan <task_id>
 /research pio <task_id> build local_agent/esp32_blink
 /research pio <task_id> upload local_agent/esp32_blink COM6
 /research serial <task_id> COM6 115200 5
-/research skill <task_id> esp32_blink_bringup
+/research skill <task_id> mcu_serial_bringup
 ```
+
+上面的命令使用 ESP32 示例工程，是因为仓库中当前包含该示例路径。DeviceResearch 工作流本身不绑定 ESP32。
 
 每个任务会写入：
 
@@ -337,7 +343,7 @@ Micius-Agent 会把高风险操作放在显式工具边界之后：
 
 ## 路线图
 
-- 扩展 ESP32 和 MCU 模板
+- 扩展 MCU、Linux 开发板、边缘 AI 板和机器人控制器模板
 - 更安全的固件生成工作流
 - 板卡手册导入和 profile 校验
 - 常见 Linux 开发板的设备节点安装器

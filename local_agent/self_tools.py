@@ -77,7 +77,7 @@ def self_tool_schemas() -> List[Dict[str, Any]]:
                 "name": "micius_usb_scan",
                 "description": (
                     "Scan USB devices and serial ports visible to the local machine running Micius. "
-                    "Use this for local USB camera, serial adapter, ESP32, and sensor bring-up checks; "
+                    "Use this for local USB cameras, serial adapters, MCU boards, sensors, and peripheral bring-up checks; "
                     "it does not require a remote embedded device node."
                 ),
                 "parameters": {

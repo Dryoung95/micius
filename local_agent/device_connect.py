@@ -226,7 +226,7 @@ def build_device_node_commands(config: Dict[str, Any], ssh_user: str | None = No
             "device_node.port": port,
             "device_node.transport": "jsonl_tcp",
         },
-        "mcu_note": "ESP32-class nodes usually connect through a serial/MQTT bridge; they are not expected to run the full Python tool server.",
+        "mcu_note": "MCU-class nodes usually connect through a serial/MQTT bridge; they are not expected to run the full Python tool server.",
     }
 
 

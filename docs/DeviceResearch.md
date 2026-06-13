@@ -1,6 +1,6 @@
 # DeviceResearch
 
-DeviceResearch is Micius-Agent's structured workflow layer for physical-device work.
+DeviceResearch is Micius-Agent's structured workflow layer for physical-device work across heterogeneous embedded and robotics hardware.
 
 It uses a structured loop: construct the task, design a strategy, generate code or scripts, verify correctness with physical evidence, profile behavior, and distill reusable skills.
 
@@ -14,7 +14,7 @@ Raw chat is too weak for hardware bring-up. A useful embedded agent must remembe
 - which failures occurred and which fixes worked
 - what should become a reusable workflow skill
 
-DeviceResearch turns each bring-up into a small, resumable task directory.
+DeviceResearch turns each bring-up into a small, resumable task directory. It is not tied to Atlas, ESP32, or any single board family; those are validation targets and examples.
 
 ## Stage Model
 
@@ -34,7 +34,7 @@ The verifier is physical evidence: USB scans, firmware builds, uploads, serial l
 Create a task:
 
 ```text
-/research new bring up an ESP32 board and verify serial output
+/research new bring up a serial-connected MCU board and verify firmware output
 ```
 
 Attach environment evidence:
@@ -59,8 +59,10 @@ Read serial evidence:
 Distill a reusable skill:
 
 ```text
-/research skill <task_id> esp32_blink_bringup
+/research skill <task_id> mcu_serial_bringup
 ```
+
+The `local_agent/esp32_blink` path is an included example project. The workflow is intended to generalize to other MCU boards, Linux-capable boards, edge-AI devices, and robot controllers as their toolchains and device-node adapters are added.
 
 ## Files
 

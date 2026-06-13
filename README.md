@@ -25,15 +25,17 @@
   <a href="#community-and-feedback">Feedback</a>
 </p>
 
-Micius-Agent keeps the main agent on your computer and exposes connected hardware through controlled tools, local device signals, PDF manuals, and lightweight device nodes. It is built for OpenAI-compatible APIs, native Anthropic Claude, serial devices, cameras, ESP32-class boards, and Linux-capable edge nodes.
+Micius-Agent keeps the main agent on your computer and exposes connected hardware through controlled tools, local device signals, PDF manuals, and lightweight device nodes. It is designed for heterogeneous embedded and robotics hardware: MCU boards, Linux-capable boards, edge-AI devices, sensors, cameras, actuators, robots, and custom device nodes.
 
 It is designed to help an LLM **see**, **remember**, and **operate** real-world embedded systems without requiring every development board to run a full coding agent locally.
+
+Atlas-class boards and ESP32/ESP32-S3 boards are current validation targets and examples, not the boundary of the project.
 
 The name **Micius** refers to **Mozi (墨子)**, the ancient Chinese thinker whose work is associated with logic, engineering, optics, and practical craftsmanship.
 
 | Local brain | Hardware nerves | Growing skills |
 |---|---|---|
-| Keep the agent on your computer and configure models by API URL, key, and model name. | Reach boards through USB, serial, PlatformIO, PDF manuals, cameras, and device nodes. | Turn board profiles, port maps, attempts, and working commands into reusable embedded workflows. |
+| Keep the agent on your computer and configure models by API URL, key, and model name. | Reach hardware through USB, serial, PlatformIO-compatible toolchains, PDF manuals, cameras, sensors, and device nodes. | Turn board profiles, port maps, attempts, and working commands into reusable hardware workflows. |
 
 ## Try It In 60 Seconds
 
@@ -69,8 +71,9 @@ Most coding agents live inside files and terminals. Micius is designed for the p
 - It can scan USB and serial devices.
 - It can monitor bounded serial output.
 - It can build and upload PlatformIO firmware.
-- It can connect Linux-capable boards as lightweight device nodes.
+- It can connect Linux-capable boards, edge devices, and robot controllers as lightweight device nodes.
 - It can remember board profiles, port aliases, failed attempts, working commands, and reusable hardware workflows.
+- It is not tied to a single board family; specific board support is added as reusable profiles, tools, and skills.
 
 ## Architecture
 
@@ -102,10 +105,11 @@ Micius-Agent is an early prototype. APIs, command names, file layouts, and hardw
 Current focus:
 
 - local CLI experience
-- ESP32 and PlatformIO workflows
-- Linux-capable embedded device nodes
+- generic MCU firmware workflows
+- Linux-capable embedded and robotics device nodes
 - board knowledge and skill curation
 - traceable hardware bring-up
+- validated examples on ESP32/ESP32-S3 and Atlas-class edge hardware
 
 ## Installation
 
@@ -114,7 +118,7 @@ Requirements:
 - Python 3.10+
 - A UTF-8 capable terminal
 - An OpenAI-compatible API endpoint or an Anthropic Claude API key
-- Optional for ESP32 workflows: `pyserial`, `esptool`, `platformio`
+- Optional for MCU workflows: `pyserial`, `platformio`, vendor flashing tools such as `esptool`
 
 ```bash
 git clone https://github.com/Dryoung95/micius.git
@@ -256,13 +260,15 @@ This is the first step toward a cache-stable, cost-aware loop for long-running e
 DeviceResearch turns hardware bring-up into a resumable workflow:
 
 ```text
-/research new bring up an ESP32 board and verify serial output
+/research new bring up a serial-connected MCU board and verify firmware output
 /research scan <task_id>
 /research pio <task_id> build local_agent/esp32_blink
 /research pio <task_id> upload local_agent/esp32_blink COM6
 /research serial <task_id> COM6 115200 5
-/research skill <task_id> esp32_blink_bringup
+/research skill <task_id> mcu_serial_bringup
 ```
+
+The commands above use the ESP32 example project because that path is currently included in the repository. The DeviceResearch workflow itself is hardware-agnostic.
 
 Each task writes:
 
@@ -337,7 +343,7 @@ Micius-Agent keeps risky operations behind explicit tools:
 
 ## Roadmap
 
-- Broader ESP32 and MCU templates
+- Broader MCU, Linux board, edge-AI board, and robot-controller templates
 - Safer firmware-generation workflows
 - Board manual import and profile validation
 - Device-node installers for common Linux boards

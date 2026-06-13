@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [
   { name = "Micius-Agent contributors" }
 ]
-keywords = ["agent", "embedded", "esp32", "atlas", "robotics", "cli"]
+keywords = ["agent", "embedded", "hardware", "mcu", "robotics", "device-node", "sensors", "cli"]
 
 [project.scripts]
 micius = "local_agent.cli:main"

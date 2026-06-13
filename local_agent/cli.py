@@ -1055,10 +1055,19 @@ def _prompt_box_hint(agent: LocalAgent) -> str:
 
 def _print_response(text: str) -> None:
     if not _response_renderer_enabled():
-        print(text)
+        _safe_print(text)
         return
     for line in _render_response_markdown(text):
-        print(line)
+        _safe_print(line)
+
+
+def _safe_print(text: str = "") -> None:
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        encoding = sys.stdout.encoding or "utf-8"
+        safe = text.encode(encoding, errors="replace").decode(encoding, errors="replace")
+        print(safe)
 
 
 def _response_renderer_enabled() -> bool:
